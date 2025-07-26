@@ -84,7 +84,7 @@ bool Renderer::Initialize(MyWindow myWindow) {
 
 bool Renderer::LoadTexture(const std::string& path) {
     // Check if already loaded
-    if (m_textures.count(path))
+    if (m_preloadedTextures.count(path))
         return true;
 
     TextureData textureData = {};
@@ -107,7 +107,7 @@ bool Renderer::LoadTexture(const std::string& path) {
     );
 
     if (SUCCEEDED(hr) && textureData.texture) {
-        m_textures[path] = std::move(textureData);
+        m_preloadedTextures[path] = std::move(textureData);
         return true;
     }
     else {
@@ -116,6 +116,20 @@ bool Renderer::LoadTexture(const std::string& path) {
         MessageBoxW(nullptr, errorMsg, L"Error", MB_ICONERROR);
         return false;
     }
+}
+
+bool Renderer::LoadTexturesBatch(const std::vector<std::string>& textureList) {
+    bool allSuccessful = true;
+
+    for (const auto& texturePath : textureList) {
+        if (!texturePath.empty()) {
+            if (!LoadTexture(texturePath)) {
+                allSuccessful = false;
+            }
+        }
+    }
+
+    return allSuccessful;
 }
 
 void Renderer::Render() {
@@ -127,11 +141,11 @@ void Renderer::Render() {
         m_spriteBrush->Begin(D3DXSPRITE_ALPHABLEND);
 
 
-        for (auto& kv : m_textures) {
-            const TextureData& td = kv.second;
-            if (td.texture) {
+        for (auto& kv : m_preloadedTextures) {
+            const TextureData& textureData = kv.second;
+            if (textureData.texture) {
                 D3DXVECTOR3 pos(0,0,0);
-                m_spriteBrush->Draw(td.texture, nullptr, nullptr, &pos, D3DCOLOR_XRGB(255, 255, 255));
+                m_spriteBrush->Draw(textureData.texture, nullptr, nullptr, &pos, D3DCOLOR_XRGB(255, 255, 255));
             }
         }
   

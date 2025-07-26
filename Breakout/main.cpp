@@ -4,9 +4,10 @@
 
 using namespace std;
 
-std::string textures[] = {
-    "assest/bg1.png",
-    "assest/paddle.png"
+// Assets to be preload
+std::vector<std::string> textureList = {
+    "assets/paddle.png",
+    "assets/bg1.png",
 };
 
 int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
@@ -22,7 +23,7 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
         MessageBoxW(nullptr, L"Failed to initialize renderer!", L"Error", MB_ICONERROR);
         return -1;
     }
-    if (!renderer.LoadTexture("assets/paddle.png")) {
+    if (!renderer.LoadTexturesBatch(textureList)) {
         MessageBoxW(nullptr, L"Failed to load bg1.png!", L"Error", MB_ICONERROR);
         return -1;
     }
