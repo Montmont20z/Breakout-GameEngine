@@ -26,7 +26,7 @@ InputManager::~InputManager() {
 
 
 
-bool InputManager::Initialize(HINSTANCE hInstance, HWND hWnd) {
+bool InputManager::Initialize(HWND hWnd) {
     
     //	Create the Direct Input object.
     HRESULT hr = DirectInput8Create(GetModuleHandle(0), DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&m_dInput, NULL);
@@ -73,19 +73,19 @@ void InputManager::Update() {
     if (diKeys[DIK_UP] & 0x80)
     {
         std::cout << "UP" << std::endl;
-        //std::cout << "Mouse X: " << mouseX << "Mouse Y: " << mouseY << std::endl;
+    }
+    if (diKeys[DIK_DOWN] & 0x80)
+    {
+        std::cout << "DOWN" << std::endl;
+    }
+    if (diKeys[DIK_LEFT] & 0x80)
+    {
+        std::cout << "LEFT" << std::endl;
+    }
+    if (diKeys[DIK_RIGHT] & 0x80)
+    {
+        std::cout << "RIGHT" << std::endl;
     }
 
-    HRESULT hr = m_dInputMouseDevice->GetDeviceState(sizeof(m_mouseState), &m_mouseState);
-    if (FAILED(hr)) {
-        // If focus was lost or not yet acquired, try to re‑acquire
-        if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-            m_dInputMouseDevice->Acquire();
-        }
-    }
-    else {
-        //// mouseState.lX and mouseState.lY are *relative* deltas since last poll
-        //mouseX += mouseState.lX;
-        //mouseY += mouseState.lY;
-    }
+    
 }

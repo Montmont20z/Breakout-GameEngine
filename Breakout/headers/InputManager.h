@@ -13,7 +13,7 @@ public:
 	InputManager();
 	~InputManager();
 
-	bool Initialize(HINSTANCE hInstance, HWND hWnd);
+	bool Initialize(HWND hWnd);
 	void Update();
 
 
@@ -25,8 +25,6 @@ private:
 	LPDIRECTINPUTDEVICE8  m_dInputKeyboardDevice; 
 	//	Direct Input mouse device.
 	LPDIRECTINPUTDEVICE8  m_dInputMouseDevice; 
-	DIMOUSESTATE m_mouseState;
-
 
 
 

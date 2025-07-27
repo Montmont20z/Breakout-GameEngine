@@ -44,6 +44,9 @@
     <ClInclude Include="headers\InputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\RenderItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\bg1.png">
@@ -52,5 +55,18 @@
     <Image Include="assets\paddle.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="assets\singlePaddle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\bg2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\bg3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="assets\ctr_title.mp3" />
+    <Media Include="assets\ctr_ingame.mp3" />
   </ItemGroup>
 </Project>

@@ -147,11 +147,19 @@ d3dx9.lib;user32.lib
     <ClInclude Include="headers\InputManager.h" />
     <ClInclude Include="headers\MyWindow.h" />
     <ClInclude Include="headers\Renderer.h" />
+    <ClInclude Include="headers\RenderItem.h" />
     <ClInclude Include="headers\TextureData.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\bg2.png" />
+    <Image Include="assets\bg3.png" />
     <Image Include="assets\paddle.png" />
     <Image Include="assets\bg1.png" />
+    <Image Include="assets\singlePaddle.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="assets\ctr_ingame.mp3" />
+    <Media Include="assets\ctr_title.mp3" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

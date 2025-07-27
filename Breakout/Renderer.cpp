@@ -138,6 +138,58 @@ bool Renderer::LoadTexturesBatch(const std::vector<std::string>& textureList) {
     return allSuccessful;
 }
 
+void Renderer::AddRenderItem(const RenderItem& item) {
+    // Load texture if not already loaded
+    if (m_preloadedTextures.find(item.texturePath) == m_preloadedTextures.end()) {
+        LoadTexture(item.texturePath);
+    }
+
+    m_renderQueue.push_back(item);
+    SortRenderQueue();
+}
+
+void Renderer::RemoveRenderItem(const std::string& texturePath, const D3DXVECTOR3& position) {
+    m_renderQueue.erase(
+        std::remove_if(m_renderQueue.begin(), m_renderQueue.end(),
+            [&](const RenderItem& item) {
+                return item.texturePath == texturePath &&
+                    item.position.x == position.x &&
+                    item.position.y == position.y &&
+                    item.position.z == position.z;
+            }),
+        m_renderQueue.end()
+    );
+
+}
+
+void Renderer::ClearRenderQueue() {
+    m_renderQueue.clear();
+}
+
+void Renderer::UpdateRenderItem(const std::string& texturePath, const D3DXVECTOR3& oldPos, const RenderItem& newItem) {
+    for (auto& item : m_renderQueue) {
+        if (item.texturePath == texturePath &&
+            item.position.x == oldPos.x &&
+            item.position.y == oldPos.y &&
+            item.position.z == oldPos.z) {
+            item = newItem;
+            SortRenderQueue();
+            break;
+        }
+    }
+}
+
+void Renderer::SortRenderQueue() {
+    std::sort(m_renderQueue.begin(), m_renderQueue.end(),
+        [](const RenderItem& a, const RenderItem& b) {
+            if (a.renderOrder != b.renderOrder) {
+                return a.renderOrder < b.renderOrder; // Lower order renders first
+            }
+            // If same render order, sort by Z position (back to front for transparency)
+            return a.position.z < b.position.z;
+        });
+}
+
 void Renderer::Render() {
     //	Clear the back buffer.
     m_d3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
@@ -146,17 +198,46 @@ void Renderer::Render() {
     if (SUCCEEDED(m_d3dDevice->BeginScene())) {
         m_spriteBrush->Begin(D3DXSPRITE_ALPHABLEND);
 
+        // Render items from the render queue in sorted order
+        for (auto& item : m_renderQueue) {
+            if (!item.visible) continue;
 
-        for (auto& kv : m_preloadedTextures) {
-            const TextureData& textureData = kv.second;
-            if (textureData.texture) {
-                D3DXVECTOR3 pos(0,0,0);
-                m_spriteBrush->Draw(textureData.texture, nullptr, nullptr, &pos, D3DCOLOR_XRGB(255, 255, 255));
+            auto textureIt = m_preloadedTextures.find(item.texturePath);
+            if (textureIt != m_preloadedTextures.end() && textureIt->second.texture) {
+                const TextureData& textureData = textureIt->second;
+
+                // Create transformation matrix
+                D3DXMATRIX transform, scaleMatrix, rotationMatrix, translationMatrix;
+                D3DXMatrixIdentity(&transform);
+
+                // Apply transformation matrix
+                D3DXMatrixScaling(&scaleMatrix, item.scale.x, item.scale.y, item.scale.z);
+                D3DXMatrixRotationZ(&rotationMatrix, item.rotation);
+                D3DXMatrixTranslation(&translationMatrix, item.position.x, item.position.y, item.position.z);
+
+                transform = scaleMatrix * rotationMatrix * translationMatrix;
+                m_spriteBrush->SetTransform(&transform);
+
+                m_spriteBrush->Draw(
+                    textureData.texture, 
+                    nullptr,  // Source rectangle (null = entire texture)
+                    nullptr,  // Center point (null = top-left)
+                    nullptr,  // Position (handled by transform matrix)
+                    item.color
+                );
+
+
             }
+
+
         }
+
+        // Reset transform
+        D3DXMATRIX identity;
+        D3DXMatrixIdentity(&identity);
+        m_spriteBrush->SetTransform(&identity);
   
         m_spriteBrush->End();
-        // End scene
         m_d3dDevice->EndScene();
     }
     else {
