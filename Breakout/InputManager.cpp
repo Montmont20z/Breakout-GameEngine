@@ -1,8 +1,12 @@
 ﻿#include "headers/InputManager.h"
 #include <iostream>
 
+using namespace std;
+
 InputManager::InputManager() : m_dInput(nullptr), m_dInputKeyboardDevice(nullptr), m_dInputMouseDevice(nullptr) {
-    // Initialize member variables
+    // Clean up previous buffer
+    ZeroMemory(m_keysCurrent, sizeof(m_keysCurrent));
+    ZeroMemory(m_keysPrev, sizeof(m_keysPrev));
 }
 InputManager::~InputManager() {
     //	Release keyboard device.
@@ -65,27 +69,28 @@ bool InputManager::Initialize(HWND hWnd) {
 }
 
 void InputManager::Update() {
-    //	Key input buffer
-    BYTE  diKeys[256];
-    // Input
-    m_dInputKeyboardDevice->GetDeviceState(256, diKeys);
+    // copy current keys to prev keys
+    memcpy(m_keysPrev, m_keysCurrent, sizeof(m_keysCurrent));
+    ZeroMemory(m_keysCurrent, sizeof(m_keysCurrent)); // clean up current buffer
+   
+    if (!m_dInputKeyboardDevice) return;
 
-    if (diKeys[DIK_UP] & 0x80)
-    {
-        //std::cout << "UP" << std::endl;
+    HRESULT hr = m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent); 
+    if (FAILED(hr)) {
+        // try to recover/reaquire device
+        hr = m_dInputKeyboardDevice->Acquire();
+        if (SUCCEEDED(hr)) {
+            hr = m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent);
+        }
+        // if still failing, leave m_keysCurrent zeroed (no keys pressed)
+        cout << "Failed to get keyboard device state" << endl;
     }
-    if (diKeys[DIK_DOWN] & 0x80)
-    {
-        //std::cout << "DOWN" << std::endl;
-    }
-    if (diKeys[DIK_LEFT] & 0x80)
-    {
-        //std::cout << "LEFT" << std::endl;
-    }
-    if (diKeys[DIK_RIGHT] & 0x80)
-    {
-        //std::cout << "RIGHT" << std::endl;
-    }
+}
 
-    
+bool InputManager::IsKeyDown(unsigned char diKey) const {
+    return (m_keysCurrent[diKey] & 0x80) != 0;
+}
+
+bool InputManager::IsKeyPressed(unsigned char diKey) const {
+    return ((m_keysCurrent[diKey] & 0x80) != 0) && ((m_keysPrev[diKey] & 0x80) == 0);
 }

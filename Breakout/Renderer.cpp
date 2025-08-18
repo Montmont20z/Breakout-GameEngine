@@ -247,10 +247,10 @@ void Renderer::Render() {
 
             // Build the source RECT fot the current frame
             // debug
-            std::cout << "tex W=" << textureData.info.Width << std::endl
-                << "H=" << textureData.info.Height << std::endl
-                << "rows= " << item.animationRows << "cols= " << item.animationCols << std::endl
-                << "frameW= " << textureData.info.Width / item.animationCols << "frameH= " << textureData.info.Height / item.animationRows << std::endl << std::endl;
+            //std::cout << "tex W=" << textureData.info.Width << std::endl
+            //    << "H=" << textureData.info.Height << std::endl
+            //    << "rows= " << item.animationRows << "cols= " << item.animationCols << std::endl
+            //    << "frameW= " << textureData.info.Width / item.animationCols << "frameH= " << textureData.info.Height / item.animationRows << std::endl << std::endl;
 
             RECT srcRect = { 0,0,0,0 };
             int logicalW = (textureData.logicalWidth > 0) ? textureData.logicalWidth : textureData.info.Width;

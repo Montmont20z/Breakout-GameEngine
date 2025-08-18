@@ -73,12 +73,47 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     auto last = clock::now();
 
     while (window.ProcessMessages()) {
+        // get delta time
 		auto now = clock::now();
 		std::chrono::duration<float> elapsed = now - last;
 		last = now;
 		float deltaTime = elapsed.count(); // seconds since last frame	
+
         // Game update and render calls here
         inputManager.Update();
+
+        // manage player state
+        int playerState = -1;
+
+		// continuous: hold arrow to play that state
+		if (inputManager.IsKeyDown(DIK_UP)) {
+			playerState = 3; // forward (row 4)
+		} else if (inputManager.IsKeyDown(DIK_DOWN)) {
+			playerState = 0; // backward (row 1)
+		} else if (inputManager.IsKeyDown(DIK_LEFT)) {
+			playerState = 1; // left (row 2)
+		} else if (inputManager.IsKeyDown(DIK_RIGHT)) {
+			playerState = 2; // right (row 3)
+		} 
+
+        // If a direction is pressed, switch state and ensure it's playing.
+		static int lastMilitiaState = militia.state; // initialize from militia earlier
+		if (playerState != -1) {
+			if (playerState != lastMilitiaState) {
+				// change state and reset animation
+				militia.SetState(playerState, true); // resets currentFrame and elapsed
+				militia.playing = true;
+				lastMilitiaState = playerState;
+				// Update renderer's copy of the sprite. old position is same as militia.position here.
+				renderer.UpdateRenderItem(militia.texturePath, militia.position, militia);
+			} else {
+				// state same; but ensure playing is true while held
+				if (!militia.playing) {
+					militia.playing = true;
+					renderer.UpdateRenderItem(militia.texturePath, militia.position, militia);
+				}
+			}
+		}
 
         // Update ball position
         currentBallPos = D3DXVECTOR3(ballX, ballY, 0);

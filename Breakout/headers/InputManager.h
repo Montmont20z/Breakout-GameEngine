@@ -5,9 +5,6 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 
-#pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dxguid.lib")
-
 class InputManager {
 public:
 	InputManager();
@@ -15,6 +12,10 @@ public:
 
 	bool Initialize(HWND hWnd);
 	void Update();
+
+	// Query helpers
+	bool IsKeyDown(unsigned char diKey) const;
+	bool IsKeyPressed(unsigned char diKey) const; // for edge cases
 
 
 private:
@@ -26,6 +27,8 @@ private:
 	//	Direct Input mouse device.
 	LPDIRECTINPUTDEVICE8  m_dInputMouseDevice; 
 
+	BYTE m_keysCurrent[256];
+	BYTE m_keysPrev[256];
 
 
 };
