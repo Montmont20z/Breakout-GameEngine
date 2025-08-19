@@ -73,6 +73,11 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     D3DXVECTOR3 currentBallPos(ballX, ballY, 0); // Track current position
 
     // Spaceship variable
+    D3DXVECTOR3 player1EngineForce = D3DXVECTOR3(0,0,0);
+	float player1EnginePower = 1.0f;
+	float player1Mass = 1;
+	D3DXVECTOR3 player1Accerlation = D3DXVECTOR3(0,0,0);
+	D3DXVECTOR3 player1Velocity = D3DXVECTOR3(0,0,0);
 
 
     // deltaTime variable
@@ -110,15 +115,22 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
             militia.position.x += 5.0f;
             moved = true;
         }
+
+        player1EngineForce = D3DXVECTOR3(0, 0, 0); // reset engine force
         if (inputManager.IsKeyDown(DIK_A)) {
             spaceship.rotation -= 0.1f;
         } else if (inputManager.IsKeyDown(DIK_D)) {
             spaceship.rotation += 0.1f;
         }else if (inputManager.IsKeyDown(DIK_W)) {
-
-        }else if (inputManager.IsKeyDown(DIK_S)) {
-
+            player1EngineForce.x = sin(spaceship.rotation) * player1EnginePower;
+            player1EngineForce.y = -cos(spaceship.rotation) * player1EnginePower;
         }
+        // Update spaceship position every frame
+        player1Accerlation = player1EngineForce / player1Mass;
+        player1Velocity = player1Velocity + player1Accerlation;
+        spaceship.position = spaceship.position + player1Velocity;
+
+
 
 		// Only change state if different
 		static int lastMilitiaState = militia.state;
