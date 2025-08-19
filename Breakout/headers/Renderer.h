@@ -22,8 +22,10 @@ public:
 	// Render Queue
 	void AddRenderItem(const SpriteInstance& item);
 	void RemoveRenderItem(const std::string& texturePath, const D3DXVECTOR3& position);
+	void RemoveRenderItemById(int id);
 	void ClearRenderQueue();
-	void UpdateRenderItem(const std::string& texturePath, const D3DXVECTOR3& oldPos, const SpriteInstance& newItem);
+	void UpdateRenderItem(const SpriteInstance& newItem);
+	void UpdateRenderItemById(int id, const SpriteInstance& newItem);
 
 	void Render();
 	IDirect3DDevice9* GetDevice();

@@ -84,6 +84,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,6 +157,7 @@ d3dx9.lib;user32.lib
     <Image Include="assets\militia.png" />
     <Image Include="assets\paddle.png" />
     <Image Include="assets\bg1.png" />
+    <Image Include="assets\practical9.png" />
     <Image Include="assets\rock.png" />
     <Image Include="assets\singlePaddle.png" />
   </ItemGroup>

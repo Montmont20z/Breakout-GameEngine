@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
 #include <d3dx9.h>
-
+#include <atomic>
 
 struct SpriteInstance {
-	int id = -1; // unique ID to allow sprite to easily used by other class
+	int id; // unique ID to allow sprite to easily used by other class
 
 	std::string texturePath;
 	
@@ -30,10 +30,46 @@ struct SpriteInstance {
 	bool looping = true;
 	bool playing = false;
 
+private:
+	static inline std::atomic<int> s_nextId{ 0 };
+
+public:
+
+
+	 SpriteInstance()
+		 : id(s_nextId.fetch_add(1, std::memory_order_relaxed))
+	 {}
+	
+	SpriteInstance(const std::string& path, const D3DXVECTOR3& pos,
+		int order = 0,
+		int animationRows_ = 1, int animationCols_ = 1,
+		int framesPerState_ = 0, // if 0, default to animationCols_
+		float frameDuration_ = 0.1f, bool looping_ = true, bool playing_ = false)
+		: id(s_nextId.fetch_add(1, std::memory_order_relaxed))
+		, texturePath(path)
+		, position(pos)
+		, renderOrder(order)
+		, animationRows(animationRows_)
+		, animationCols(animationCols_)
+		, frameDuration(frameDuration_)
+		, looping(looping_)
+		, playing(playing_)
+	{
+		if (animationRows < 1) animationRows = 1;
+		if (animationCols < 1) animationCols = 1;
+
+		if (framesPerState_ > 0) framesPerState = framesPerState_;
+		else framesPerState = animationCols;
+
+		// sanity clamp
+		if (framesPerState > animationCols) framesPerState = animationCols;
+		currentFrame = 0;
+		state = 0;
+	}
+
 	 RECT GetSourceRect(int textureWidth, int textureHeight) const {
-        RECT rect = {0,0,0,0};
+        RECT rect = {0,0,textureWidth,textureHeight};
 		if (animationCols <= 0 || animationRows <= 0 || framesPerState <= 0) {
-			rect.left = 0; rect.top = 0; rect.right = textureWidth; rect.bottom = textureHeight;
 			return rect;
 		}
 		// Size of one cell/frame
@@ -55,34 +91,6 @@ struct SpriteInstance {
         rect.bottom = rect.top + frameH;
         return rect;
     }
-
-	SpriteInstance() = default;
-	
-	SpriteInstance(const std::string& path, const D3DXVECTOR3& pos,
-		int order = 0,
-		int animationRows_ = 1, int animationCols_ = 1,
-		int framesPerState_ = 0, // if 0, default to animationCols_
-		float frameDuration_ = 0.1f, bool looping_ = true, bool playing_ = false)
-		: texturePath(path)
-		, position(pos)
-		, renderOrder(order)
-		, animationRows(animationRows_)
-		, animationCols(animationCols_)
-		, frameDuration(frameDuration_)
-		, looping(looping_)
-		, playing(playing_)
-	{
-		if (animationRows < 1) animationRows = 1;
-		if (animationCols < 1) animationCols = 1;
-
-		if (framesPerState_ > 0) framesPerState = framesPerState_;
-		else framesPerState = animationCols;
-
-		// sanity clamp
-		if (framesPerState > animationCols) framesPerState = animationCols;
-		currentFrame = 0;
-		state = 0;
-	}
 
 	// Change animation state (row). newState is 0-based (0..animationRows-1)
 	void SetState(int newState, bool resetFrame = true) {

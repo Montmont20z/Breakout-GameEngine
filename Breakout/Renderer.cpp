@@ -177,11 +177,27 @@ void Renderer::Update(float deltaTime){
 }
 
 void Renderer::AddRenderItem(const SpriteInstance& item) {
-    // Load texture if not already loaded
+    // if texture not loaded, attempt load (keeps behavior)
     if (m_preloadedTextures.find(item.texturePath) == m_preloadedTextures.end()) {
         LoadTexture(item.texturePath);
     }
 
+    // if an item with same id exists, replace (but preserve runtime fields)
+    for (auto& existing : m_renderQueue) {
+        if (existing.id == item.id) {
+            // preserve runtime animation values from existing
+            int savedFrame = existing.currentFrame;
+            float savedElapsed = existing.elapsedSinceFrame;
+
+            existing = item; // copy all fields
+            existing.currentFrame = savedFrame;
+            existing.elapsedSinceFrame = savedElapsed;
+            SortRenderQueue();
+            return;
+        }
+    }
+
+    // otherwise push new
     m_renderQueue.push_back(item);
     SortRenderQueue();
 }
@@ -204,17 +220,57 @@ void Renderer::ClearRenderQueue() {
     m_renderQueue.clear();
 }
 
-void Renderer::UpdateRenderItem(const std::string& texturePath, const D3DXVECTOR3& oldPos, const SpriteInstance& newItem) {
-    for (auto& item : m_renderQueue) {
-        if (item.texturePath == texturePath &&
-            item.position.x == oldPos.x &&
-            item.position.y == oldPos.y &&
-            item.position.z == oldPos.z) {
-            item = newItem;
+void Renderer::UpdateRenderItem(const SpriteInstance& item) {
+    for (auto& existing : m_renderQueue) {
+        if (existing.id == item.id) {
+            // preserve runtime fields
+            int savedCurrentFrame = existing.currentFrame;
+            float savedElapsed = existing.elapsedSinceFrame;
+
+            // copy static/display fields
+            existing.texturePath = item.texturePath;
+            existing.position = item.position;
+            existing.scale = item.scale;
+            existing.rotation = item.rotation;
+            existing.color = item.color;
+            existing.renderOrder = item.renderOrder;
+
+            existing.animationRows = item.animationRows;
+            existing.animationCols = item.animationCols;
+            existing.framesPerState = item.framesPerState;
+            existing.frameDuration = item.frameDuration;
+            existing.looping = item.looping;
+
+            // state is part of static animation properties
+            existing.state = item.state;
+
+            // playing flag allowed to change
+            existing.playing = item.playing;
+
+            // restore runtime animation progress so animation continues
+            existing.currentFrame = savedCurrentFrame;
+            existing.elapsedSinceFrame = savedElapsed;
+
             SortRenderQueue();
-            break;
+            return;
         }
     }
+
+    // not found => add as new item
+    AddRenderItem(item);
+}
+
+void Renderer::UpdateRenderItemById(int id, const SpriteInstance& newItem) {
+    for (auto& item : m_renderQueue) {
+        if (item.id == id) {
+            item = newItem;
+            SortRenderQueue();
+            return;
+        }
+    }
+    // optional: if not found, push it
+    m_renderQueue.push_back(newItem);
+    SortRenderQueue();
 }
 
 void Renderer::SortRenderQueue() {
@@ -253,8 +309,11 @@ void Renderer::Render() {
             //    << "frameW= " << textureData.info.Width / item.animationCols << "frameH= " << textureData.info.Height / item.animationRows << std::endl << std::endl;
 
             RECT srcRect = { 0,0,0,0 };
+            // compute logical frame size
             int logicalW = (textureData.logicalWidth > 0) ? textureData.logicalWidth : textureData.info.Width;
             int logicalH = (textureData.logicalHeight> 0) ? textureData.logicalHeight: textureData.info.Height;
+            int frameW = (item.animationCols > 0) ? (logicalW / item.animationCols) : logicalW;
+            int frameH = (item.animationRows > 0) ? (logicalH / item.animationRows) : logicalH;
             // use logical width, height if provided
             if (item.framesPerState > 1 && logicalW > 0 && logicalH > 0) {
                 srcRect = item.GetSourceRect(logicalW, logicalH);
@@ -267,16 +326,25 @@ void Renderer::Render() {
                 srcRect.bottom = textureData.info.Height;
             }
 
+            // Find the center of the sprite
+            D3DXVECTOR3 center((float)frameW * 0.5f, (float)frameH * 0.5f, 0.0f);
+
+            // Build transform:
+			// 1) translate center -> origin (-center)
+			// 2) scale
+			// 3) rotate around Z (item.rotation is in radians)
+			// 4) translate origin -> final position (item.position + center) so top-left remains item.position
 			// Create transformation matrix
-			D3DXMATRIX transform, scaleMatrix, rotationMatrix, translationMatrix;
-			D3DXMatrixIdentity(&transform);
+			D3DXMATRIX transform, scaleMatrix, rotationMatrix, translationMatrix, mTransToOrigin;
+			//D3DXMatrixIdentity(&transform);
 
 			// Apply transformation matrix
+            D3DXMatrixTranslation(&mTransToOrigin, -center.x, -center.y, 0.0f);
 			D3DXMatrixScaling(&scaleMatrix, item.scale.x, item.scale.y, item.scale.z);
 			D3DXMatrixRotationZ(&rotationMatrix, item.rotation);
 			D3DXMatrixTranslation(&translationMatrix, item.position.x, item.position.y, item.position.z);
 
-			transform = scaleMatrix * rotationMatrix * translationMatrix;
+			transform = mTransToOrigin * scaleMatrix * rotationMatrix * translationMatrix;
 			m_spriteBrush->SetTransform(&transform);
 
 			m_spriteBrush->Draw(

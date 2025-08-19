@@ -70,6 +70,9 @@
     <Image Include="assets\rock.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="assets\practical9.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\ctr_title.mp3" />

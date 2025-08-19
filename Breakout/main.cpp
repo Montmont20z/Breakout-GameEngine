@@ -54,19 +54,26 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     SpriteInstance paddle("assets/singlePaddle.png", D3DXVECTOR3(400, 500, 0), 1);
     renderer.AddRenderItem(paddle);
 
+    SpriteInstance spaceship("assets/practical9.png", D3DXVECTOR3(200, 200, 0), 2, 2, 2, 2,0.1f, true, true);
+    renderer.AddRenderItem(spaceship);
+
     // Ball (render order 2 - renders on top of everything)
     SpriteInstance ball("assets/ball.png", D3DXVECTOR3(500, 300, 0), 2);
     ball.scale = D3DXVECTOR3(0.5f, 0.5f, 1.0f); // Make ball smaller
     renderer.AddRenderItem(ball);
 
     SpriteInstance militia("assets/militia.png", D3DXVECTOR3(600, 400, 0), 2, 4, 4, 4, 0.1f, true, true);
-    militia.SetState(3);
+    //militia.id = 1;
+    //militia.SetState(0);
     renderer.AddRenderItem(militia);
 
     // Game variables for ball movement
     float ballX = 500, ballY = 300;
     float ballSpeedX = 5.0f, ballSpeedY = 5.0f;
     D3DXVECTOR3 currentBallPos(ballX, ballY, 0); // Track current position
+
+    // Spaceship variable
+
 
     // deltaTime variable
     using clock = std::chrono::high_resolution_clock;
@@ -82,52 +89,60 @@ int main(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
         // Game update and render calls here
         inputManager.Update();
 
-        // manage player state
         int playerState = -1;
+		bool moved = false;
 
-		// continuous: hold arrow to play that state
 		if (inputManager.IsKeyDown(DIK_UP)) {
-			playerState = 3; // forward (row 4)
+			playerState = 3;
+			militia.position.y -= 5.0f;
+			moved = true;
 		} else if (inputManager.IsKeyDown(DIK_DOWN)) {
-			playerState = 0; // backward (row 1)
+			playerState = 0;
+			militia.position.y += 5.0f;
+			moved = true;
 		} else if (inputManager.IsKeyDown(DIK_LEFT)) {
-			playerState = 1; // left (row 2)
-		} else if (inputManager.IsKeyDown(DIK_RIGHT)) {
-			playerState = 2; // right (row 3)
-		} 
+			playerState = 1;
+			militia.position.x -= 5.0f;
+			moved = true;
+        }
+        else if (inputManager.IsKeyDown(DIK_RIGHT)) {
+            playerState = 2;
+            militia.position.x += 5.0f;
+            moved = true;
+        }
+        if (inputManager.IsKeyDown(DIK_A)) {
+            spaceship.rotation -= 0.1f;
+        } else if (inputManager.IsKeyDown(DIK_D)) {
+            spaceship.rotation += 0.1f;
+        }else if (inputManager.IsKeyDown(DIK_W)) {
 
-        // If a direction is pressed, switch state and ensure it's playing.
-		static int lastMilitiaState = militia.state; // initialize from militia earlier
-		if (playerState != -1) {
-			if (playerState != lastMilitiaState) {
-				// change state and reset animation
-				militia.SetState(playerState, true); // resets currentFrame and elapsed
-				militia.playing = true;
-				lastMilitiaState = playerState;
-				// Update renderer's copy of the sprite. old position is same as militia.position here.
-				renderer.UpdateRenderItem(militia.texturePath, militia.position, militia);
-			} else {
-				// state same; but ensure playing is true while held
-				if (!militia.playing) {
-					militia.playing = true;
-					renderer.UpdateRenderItem(militia.texturePath, militia.position, militia);
-				}
-			}
+        }else if (inputManager.IsKeyDown(DIK_S)) {
+
+        }
+
+		// Only change state if different
+		static int lastMilitiaState = militia.state;
+		if (playerState != -1 && playerState != lastMilitiaState) {
+			militia.SetState(playerState, true);
+			militia.playing = true;
+			lastMilitiaState = playerState;
 		}
+        renderer.UpdateRenderItem(militia);
+        renderer.UpdateRenderItem(spaceship);
 
-        // Update ball position
-        currentBallPos = D3DXVECTOR3(ballX, ballY, 0);
-        ballX += ballSpeedX;
-        ballY += ballSpeedY;
+        //// Update ball position
+        //currentBallPos = D3DXVECTOR3(ballX, ballY, 0);
+        //ballX += ballSpeedX;
+        //ballY += ballSpeedY;
 
-        // Simple bounce logic
-        if (ballX <= 0 || ballX >= SCREEN_WIDTH - 32) ballSpeedX = -ballSpeedX;
-        if (ballY <= 0 || ballY >= SCREEN_HEIGHT - 32) ballSpeedY = -ballSpeedY;
+        //// Simple bounce logic
+        //if (ballX <= 0 || ballX >= SCREEN_WIDTH - 32) ballSpeedX = -ballSpeedX;
+        //if (ballY <= 0 || ballY >= SCREEN_HEIGHT - 32) ballSpeedY = -ballSpeedY;
 
-        // Update ball position in render queue
-        SpriteInstance updatedBall("assets/ball.png", D3DXVECTOR3(ballX, ballY, 0), 2);
-        updatedBall.scale = D3DXVECTOR3(0.5f, 0.5f, 1.0f);
-        renderer.UpdateRenderItem("assets/ball.png", currentBallPos, updatedBall);
+        //// Update ball position in render queue
+        //SpriteInstance updatedBall("assets/ball.png", D3DXVECTOR3(ballX, ballY, 0), 2);
+        //updatedBall.scale = D3DXVECTOR3(0.5f, 0.5f, 1.0f);
+        //renderer.UpdateRenderItem("assets/ball.png", currentBallPos, updatedBall);
 
         renderer.Update(deltaTime);
         renderer.Render();
