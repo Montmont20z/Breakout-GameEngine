@@ -92,8 +92,10 @@ bool Renderer::Initialize(HWND hWnd, int width, int height) {
 
 void Renderer::DrawSprite(const SpriteInstance& sprite)
 {
-    const auto currentSprite = m_textures.find(sprite.textureId);
-    if (currentSprite == m_textures.end() || !currentSprite->second.texture) return;
+    if (sprite.textureId == -1) return; // dont draw sprite id that is negative // negvative means invalid sprite
+
+    const auto currentSprite = m_texturesById.find(sprite.textureId);
+    if (currentSprite == m_texturesById.end() || !currentSprite->second.texture) return;
     const TextureData& tex = currentSprite->second;
 
     // get logical width, if not get original width
@@ -134,49 +136,53 @@ void Renderer::EndFrame() {
 	m_d3dDevice->Present(nullptr,nullptr,nullptr,nullptr);
 }
 
-//bool Renderer::LoadTexture(const std::string& path, int logicalWidth, int logicalHeight) {
-//     // If already loaded, optionally update logical sizes
-//    auto it = m_preloadedTextures.find(path);
-//    if (it != m_preloadedTextures.end()) {
-//        if (logicalWidth > 0) it->second.logicalWidth = logicalWidth;
-//        if (logicalHeight > 0) it->second.logicalHeight = logicalHeight;
-//        return true;
-//    }
-//
-//    TextureData textureData = {};
-//    textureData.filename = path;
-//
-//     HRESULT hr = D3DXCreateTextureFromFileExA(
-//        m_d3dDevice,
-//        path.c_str(),
-//        D3DX_DEFAULT, D3DX_DEFAULT,
-//        D3DX_DEFAULT,
-//        0,
-//        D3DFMT_UNKNOWN,
-//        D3DPOOL_MANAGED,
-//        D3DX_DEFAULT,
-//        D3DX_DEFAULT,
-//        0,
-//        &textureData.info,
-//        nullptr,
-//        &textureData.texture
-//    );
-//
-//    if (SUCCEEDED(hr) && textureData.texture) {
-//         // If caller provided logical sizes, use them. Otherwise default to actual texture size.
-//        textureData.logicalWidth = (logicalWidth > 0) ? logicalWidth : textureData.info.Width;
-//        textureData.logicalHeight = (logicalHeight > 0) ? logicalHeight : textureData.info.Height;
-//
-//        m_preloadedTextures[path] = std::move(textureData);
-//        return true;
-//    }
-//    else {
-//        wchar_t errorMsg[256];
-//        swprintf_s(errorMsg, L"Failed to load: %hs\nHRESULT: 0x%08X", path.c_str(), hr);
-//        MessageBoxW(nullptr, errorMsg, L"Error", MB_ICONERROR);
-//        return false;
-//    }
-//}
+int Renderer::LoadTexture(const std::string& path, int logicalWidth, int logicalHeight) {
+     // If already loaded, optionally update logical sizes
+    auto it = m_texturesIdByPath.find(path);
+    if (it != m_texturesIdByPath.end()) {
+        auto& td = m_texturesById[it->second];
+        if (logicalWidth > 0) td.logicalWidth = logicalWidth;
+        if (logicalHeight > 0) td.logicalHeight = logicalHeight;
+        return it->second;
+    }
+
+    TextureData textureData = {};
+    textureData.filename = path;
+
+     HRESULT hr = D3DXCreateTextureFromFileExA(
+        m_d3dDevice,
+        path.c_str(),
+        D3DX_DEFAULT, D3DX_DEFAULT,
+        D3DX_DEFAULT,
+        0,
+        D3DFMT_UNKNOWN,
+        D3DPOOL_MANAGED,
+        D3DX_DEFAULT,
+        D3DX_DEFAULT,
+        0,
+        &textureData.info,
+        nullptr,
+        &textureData.texture
+    );
+
+    if (SUCCEEDED(hr) && textureData.texture) {
+         // If caller provided logical sizes, use them. Otherwise default to actual texture size.
+        textureData.logicalWidth = (logicalWidth > 0) ? logicalWidth : textureData.info.Width;
+        textureData.logicalHeight = (logicalHeight > 0) ? logicalHeight : textureData.info.Height;
+
+
+        const int id = m_nextTexId++;
+        m_texturesIdByPath[path] = id; // get texture id
+        m_texturesById.emplace(id, std::move(textureData));
+        return id;
+    }
+    else {
+        wchar_t errorMsg[256];
+        swprintf_s(errorMsg, L"Failed to load: %hs\nHRESULT: 0x%08X", path.c_str(), hr);
+        MessageBoxW(nullptr, errorMsg, L"Error", MB_ICONERROR);
+        return -1;
+    }
+}
 //
 //bool Renderer::LoadTexturesBatch(const std::vector<std::string>& textureList) {
 //    bool allSuccessful = true;
@@ -435,6 +441,6 @@ int Renderer::CreateSolidTexture(D3DCOLOR argb) {
 
     static int nextId = 1;
     const int id = nextId++;
-    m_textures[id] = std::move(td);
+    m_texturesById[id] = std::move(td);
     return id;
 }

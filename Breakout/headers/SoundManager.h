@@ -9,7 +9,7 @@ public:
 	FMOD_RESULT result; // HRESULT
 	void* extradriverdate = 0;
 
-	void InitializeAudio(); // Initialize the fmod sound system
+	bool Initialize(); // Initialize the fmod sound system
 	void PlaySound1(); // play sound
 	void PlaySoundTrack();
 	void LoadSounds();

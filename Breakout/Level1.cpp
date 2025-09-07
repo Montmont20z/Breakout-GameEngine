@@ -5,6 +5,24 @@
 
 static D3DXVECTOR3 makePos(float x, float y) { return D3DXVECTOR3(x, y, 0); }
 
+bool Level1::OnEnter(const GameServices& services) {
+
+    paddleTexId_ = services.renderer.LoadTexture("assets/singlePaddle.png");
+
+    singlePaddle_.textureId = paddleTexId_;
+    singlePaddle_.animationRows = 1;
+    singlePaddle_.animationCols = 1;
+    singlePaddle_.framesPerState = 1;
+    singlePaddle_.position = { 500.f, 560.f, 0.f };
+    singlePaddle_.scale    = { 1.f, 1.f, 1.f };
+    singlePaddle_.color    = D3DCOLOR_XRGB(255,255,255);
+
+
+    inited_ = true;
+    return true;
+
+}
+
 void Level1::Update(float dt, InputManager&, PhysicsManager&, SoundManager&) {
     angle_ += dt;                        // spin ~1 rad/s
     center_.rotation = angle_;
@@ -46,5 +64,6 @@ void Level1::Render(Renderer& renderer) {
     renderer.DrawSprite(center_);                   // spinning center
     renderer.DrawSprite(overA_);                    // bottom magenta
     renderer.DrawSprite(overB_);                    // top semi-transparent black
+    renderer.DrawSprite(singlePaddle_);
 }
 

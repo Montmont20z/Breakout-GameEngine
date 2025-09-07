@@ -3,8 +3,9 @@
 #include "headers/MyWindow.h"
 #include "headers/Level1.h"
 #include <iostream>
-#include <chrono>
+//#include <chrono>
 #include <memory>
+#include <GameServices.h>
 
 using namespace std;
 
@@ -14,11 +15,7 @@ Game::Game(HINSTANCE hInstance, int width, int height, int nCmdShow)
     , m_screenHeight(height)
     , m_nCmdShow(nCmdShow)
     , m_window(hInstance, width, height, L"Breakout Game")
-{
- 
-
-
-}
+{}
 
 bool Game::Initialize() {
     if (!m_window.Initialize()) {
@@ -34,6 +31,11 @@ bool Game::Initialize() {
         MessageBoxW(nullptr, L"Failed to initialize input manager!", L"Error", MB_ICONERROR);
         return false;
     }
+    if (!m_soundManager.Initialize()){
+        MessageBoxW(nullptr, L"Failed to initialize sound manager!", L"Error", MB_ICONERROR);
+        return false;
+    }
+
 
     ChangeState(std::make_unique<Level1>());
 
@@ -46,6 +48,10 @@ void Game::Run()
     using clock = std::chrono::steady_clock;
     auto prev = clock::now();
 
+    m_soundManager.LoadSounds();
+    //m_soundManager.PlaySound1();
+    //m_soundManager.PlaySoundTrack();
+
 
     while (m_window.ProcessMessages()) {
         // update dt
@@ -54,13 +60,11 @@ void Game::Run()
         prev = now;
 
         m_inputManager.Update();
+
         m_renderer.BeginFrame();
-		//m_gameState->Update(dt, m_inputManager, m_physicsManager, m_soundManager);
+		m_gameState->Update(dt, m_inputManager, m_physicsManager, m_soundManager);
         m_gameState->Render(m_renderer);
         m_renderer.EndFrame();
-
-
-
 
     }
 }
@@ -73,5 +77,8 @@ void Game::ChangeState(std::unique_ptr<IGameState> next)
 {
     if (m_gameState) m_gameState->OnExit();
     m_gameState = std::move(next);
-    if (m_gameState) m_gameState->OnEnter();
+    if (m_gameState) {
+        GameServices svc{ m_renderer, m_inputManager, m_physicsManager, m_soundManager };
+        m_gameState->OnEnter(svc);
+    }
 }

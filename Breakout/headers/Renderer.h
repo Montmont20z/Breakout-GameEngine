@@ -18,7 +18,7 @@ public:
 	~Renderer();
 	bool Initialize(HWND hWnd, int width, int height);
 	void Shutdown();
-	//bool LoadTexture(const std::string& path, int logicalWidth = 0, int logicalHeight = 0);
+	int LoadTexture(const std::string& path, int logicalWidth = 0, int logicalHeight = 0);
 	//bool LoadTexturesBatch(const std::vector<std::string>& textureList);
 	// Update animation
 	//void Update(float deltaTime);
@@ -43,8 +43,10 @@ private:
 	D3DPRESENT_PARAMETERS m_d3dPP = {};
 	IDirect3D9* m_direct3D9 = nullptr;
 	IDirect3DDevice9* m_d3dDevice = nullptr;
-	std::unordered_map<int, TextureData> m_textures = {};
 	ID3DXSprite* m_spriteBrush = nullptr;
+	std::unordered_map<int, TextureData> m_texturesById; // id -> texture
+	std::unordered_map<std::string, int> m_texturesIdByPath; // path -> id
+	int m_nextTexId = 0;
 
 
 	//void SortRenderQueue();

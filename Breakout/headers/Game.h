@@ -1,12 +1,11 @@
 #pragma once
 #include <chrono>
+#include "MyWindow.h"
 #include "Renderer.h"
 #include "InputManager.h"
-#include "MyWindow.h"
-#include "SpriteInstance.h"
-#include "IGameState.h"
 #include "PhysicsManager.h"
 #include "SoundManager.h"
+#include "IGameState.h"
 
 class IGameState; class Level1;
 
@@ -23,10 +22,6 @@ private:
 	int m_screenWidth;
 	int m_screenHeight;
 	int m_nCmdShow;
-
-	//// Timing
-	//using clock = std::chrono::high_resolution_clock;
-	//clock::time_point lastTick{};
 
 	//// Game objects
 	//SpriteInstance  background{ "assets/bg3.png", D3DXVECTOR3(0,0,0), 0 };

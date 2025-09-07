@@ -150,6 +150,7 @@ d3dx9.lib;user32.lib
     <Text Include="example.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\GameServices.h" />
     <ClInclude Include="headers\IGameState.h" />
     <ClInclude Include="headers\Game.h" />
     <ClInclude Include="headers\InputManager.h" />

@@ -4,7 +4,7 @@
 #include <atomic>
 
 struct SpriteInstance {
-	int textureId; // unique ID to allow sprite to easily used by other class
+	int textureId = 0; // unique ID to allow sprite to easily used by other class
 
 	std::string texturePath;
 	
@@ -14,21 +14,19 @@ struct SpriteInstance {
 	float rotation = 0.0f;
 	D3DCOLOR color = D3DCOLOR_XRGB(255,255,255);
 	int renderOrder = 0; // Lower values render first (background), higher value render last (foreground)
-	bool visible = true;
 
 	// animation layout
 	int animationRows = 1; // states
 	int animationCols = 1; 
 	int framesPerState = 1;    // convenience: usually equals animationCols
 
-
 	// runtime animation state
-	int state = 0;
-	int currentFrame = 0;
+	int state = 0, currentFrame = 0;
 	float frameDuration = 0.1f; // seconds per frame
 	float elapsedSinceFrame = 0.0f; // accumulated seconds
 	bool looping = true;
 	bool playing = false;
+	bool visible = true;
 
 private:
 	static inline std::atomic<int> s_nextId{ 0 };

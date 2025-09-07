@@ -1,10 +1,11 @@
 #pragma once
+#include "GameServices.h"
 class InputManager; class PhysicsManager; class SoundManager; class Renderer;
 
 class IGameState {
 public:
 	virtual ~IGameState() = default;
-	virtual bool OnEnter() { return true; }
+	virtual bool OnEnter(const GameServices& services) { (void)services; return true; }
 	virtual void OnExit() {}
 	virtual void Update(float dt,
 						InputManager& inputManager,

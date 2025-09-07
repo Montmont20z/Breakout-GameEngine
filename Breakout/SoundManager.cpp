@@ -1,9 +1,11 @@
 #include "headers/SoundManager.h"
 
-void SoundManager::InitializeAudio()
+bool SoundManager::Initialize()
 {
 	result = FMOD::System_Create(&system);
 	result = system->init(32, FMOD_INIT_NORMAL, extradriverdate);
+	if (result != FMOD_OK) return false;
+	return true;
 }
 
 void SoundManager::PlaySound1()
@@ -21,7 +23,7 @@ void SoundManager::LoadSounds()
 	result = system->createSound("assets/128294__xenonn__layered-gunshot-2.wav", FMOD_DEFAULT, 0,	&sound1);
 	result = sound1->setMode(FMOD_LOOP_OFF);
 
-	result = system->createStream("assets/659278__seth_makes_sounds__lofi-guitar-beat-70bpm.wav", FMOD_DEFAULT, 0,	&sound2);
+	result = system->createStream("assets/never_gonna_give_you_up.mp3", FMOD_DEFAULT, 0,	&sound2);
 	result = sound1->setMode(FMOD_LOOP_OFF);
 
 }
