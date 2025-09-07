@@ -75,7 +75,7 @@
     <LibraryPath>$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(DXSDK_DIR)include\;$(IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc</IncludePath>
+    <IncludePath>$(DXSDK_DIR)include\;$(IncludePath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;</IncludePath>
     <LibraryPath>$(DXSDK_DIR)lib\x86;$(LibraryPath);C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -85,6 +85,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,9 +137,12 @@ d3dx9.lib;user32.lib
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="Level1.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MyWindow.cpp" />
+    <ClCompile Include="PhysicsManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SoundManager.cpp" />
   </ItemGroup>
@@ -146,13 +150,17 @@ d3dx9.lib;user32.lib
     <Text Include="example.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\IGameState.h" />
+    <ClInclude Include="headers\Game.h" />
     <ClInclude Include="headers\InputManager.h" />
     <ClInclude Include="headers\MyWindow.h" />
     <ClInclude Include="headers\PhysicsBody.h" />
     <ClInclude Include="headers\Renderer.h" />
     <ClInclude Include="headers\SpriteInstance.h" />
     <ClInclude Include="headers\TextureData.h" />
-    <ClInclude Include="SoundManager.h" />
+    <ClInclude Include="headers\SoundManager.h" />
+    <ClInclude Include="headers\PhysicsManager.h" />
+    <ClInclude Include="headers\Level1.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\bg2.png" />

@@ -1,4 +1,4 @@
-#include "SoundManager.h"
+#include "headers/SoundManager.h"
 
 void SoundManager::InitializeAudio()
 {

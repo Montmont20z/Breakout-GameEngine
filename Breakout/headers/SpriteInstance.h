@@ -4,7 +4,7 @@
 #include <atomic>
 
 struct SpriteInstance {
-	int id; // unique ID to allow sprite to easily used by other class
+	int textureId; // unique ID to allow sprite to easily used by other class
 
 	std::string texturePath;
 	
@@ -37,7 +37,7 @@ public:
 
 
 	 SpriteInstance()
-		 : id(s_nextId.fetch_add(1, std::memory_order_relaxed))
+		 : textureId(s_nextId.fetch_add(1, std::memory_order_relaxed))
 	 {}
 	
 	SpriteInstance(const std::string& path, const D3DXVECTOR3& pos,
@@ -45,7 +45,7 @@ public:
 		int animationRows_ = 1, int animationCols_ = 1,
 		int framesPerState_ = 0, // if 0, default to animationCols_
 		float frameDuration_ = 0.1f, bool looping_ = true, bool playing_ = false)
-		: id(s_nextId.fetch_add(1, std::memory_order_relaxed))
+		: textureId(s_nextId.fetch_add(1, std::memory_order_relaxed))
 		, texturePath(path)
 		, position(pos)
 		, renderOrder(order)
