@@ -92,10 +92,10 @@ bool Renderer::Initialize(HWND hWnd, int width, int height) {
 
 void Renderer::DrawSprite(const SpriteInstance& sprite)
 {
-    if (sprite.textureId == -1) return; // dont draw sprite id that is negative // negvative means invalid sprite
     if (!sprite.visible) return; // dont draw if not visible
+	if (sprite.textureHandle <= 0) return; // dont draw sprite id that is negative // negvative means invalid sprite
 
-    const auto currentSprite = m_texturesById.find(sprite.textureId);
+    const auto currentSprite = m_texturesById.find(sprite.textureHandle);
     if (currentSprite == m_texturesById.end() || !currentSprite->second.texture) return;
     const TextureData& tex = currentSprite->second;
 
@@ -121,8 +121,6 @@ void Renderer::DrawSprite(const SpriteInstance& sprite)
 
     m_spriteBrush->SetTransform(&mWorld);
     m_spriteBrush->Draw(tex.texture, &srcRect, nullptr, nullptr, sprite.color);
-
-
 }
 
 void Renderer::BeginFrame() {
@@ -186,6 +184,29 @@ int Renderer::LoadTexture(const std::string& path, int logicalWidth, int logical
         return -1;
     }
 }
+
+int Renderer::CreateSolidTexture(D3DCOLOR argb) {
+    IDirect3DTexture9* tex = nullptr;
+    if (FAILED(m_d3dDevice->CreateTexture(
+            1,1,1,0,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&tex,nullptr))) return 0;
+
+    D3DLOCKED_RECT lr{};
+    if (SUCCEEDED(tex->LockRect(0,&lr,nullptr,0))) {
+        *reinterpret_cast<DWORD*>(lr.pBits) = argb;
+        tex->UnlockRect(0);
+    }
+    TextureData td;
+    td.texture = tex;
+    td.info.Width  = 1;
+    td.info.Height = 1;
+    td.logicalWidth  = 1;
+    td.logicalHeight = 1;
+
+    const int id = m_nextTexId++;
+    m_texturesById[id] = std::move(td);
+    return id;
+}
+
 //
 //bool Renderer::LoadTexturesBatch(const std::vector<std::string>& textureList) {
 //    bool allSuccessful = true;
@@ -425,25 +446,3 @@ int Renderer::LoadTexture(const std::string& path, int logicalWidth, int logical
 //    m_d3dDevice->Present(NULL, NULL, NULL, NULL);
 //}
 
-int Renderer::CreateSolidTexture(D3DCOLOR argb) {
-    IDirect3DTexture9* tex = nullptr;
-    if (FAILED(m_d3dDevice->CreateTexture(
-            1,1,1,0,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&tex,nullptr))) return 0;
-
-    D3DLOCKED_RECT lr{};
-    if (SUCCEEDED(tex->LockRect(0,&lr,nullptr,0))) {
-        *reinterpret_cast<DWORD*>(lr.pBits) = argb;
-        tex->UnlockRect(0);
-    }
-    TextureData td;
-    td.texture = tex;
-    td.info.Width  = 1;
-    td.info.Height = 1;
-    td.logicalWidth  = 1;
-    td.logicalHeight = 1;
-
-    static int nextId = 1;
-    const int id = nextId++;
-    m_texturesById[id] = std::move(td);
-    return id;
-}

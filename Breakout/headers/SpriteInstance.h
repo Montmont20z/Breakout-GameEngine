@@ -4,7 +4,7 @@
 #include <atomic>
 
 struct SpriteInstance {
-	int textureId = 0; // unique ID to allow sprite to easily used by other class
+	int textureHandle = 0;
 
 	std::string texturePath;
 	
@@ -29,21 +29,29 @@ struct SpriteInstance {
 	bool visible = true;
 
 private:
-	static inline std::atomic<int> s_nextId{ 0 };
+	int m_textureId = 0; // unique ID to allow sprite to easily used by other class
+	static inline std::atomic<int> s_nextUniqueId{ 1 };
 
 public:
 
 
 	 SpriteInstance()
-		 : textureId(s_nextId.fetch_add(1, std::memory_order_relaxed))
-	 {}
+		 : m_textureId(s_nextUniqueId.fetch_add(1, std::memory_order_relaxed)) {}
+
+	 SpriteInstance CloneWithNewId() const {
+		 SpriteInstance c = *this;
+		 c.m_textureId = s_nextUniqueId.fetch_add(1, std::memory_order_relaxed);
+		 return c;
+	 }
+
+	 int id() const { return m_textureId; }
 	
 	SpriteInstance(const std::string& path, const D3DXVECTOR3& pos,
 		int order = 0,
 		int animationRows_ = 1, int animationCols_ = 1,
 		int framesPerState_ = 0, // if 0, default to animationCols_
 		float frameDuration_ = 0.1f, bool looping_ = true, bool playing_ = false)
-		: textureId(s_nextId.fetch_add(1, std::memory_order_relaxed))
+		: m_textureId(s_nextUniqueId.fetch_add(1, std::memory_order_relaxed))
 		, texturePath(path)
 		, position(pos)
 		, renderOrder(order)

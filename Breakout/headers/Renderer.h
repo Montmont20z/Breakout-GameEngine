@@ -47,7 +47,7 @@ private:
 	ID3DXSprite* m_spriteBrush = nullptr;
 	std::unordered_map<int, TextureData> m_texturesById; // id -> texture
 	std::unordered_map<std::string, int> m_texturesIdByPath; // path -> id
-	int m_nextTexId = 0;
+	int m_nextTexId = 1;
 
 
 	//void SortRenderQueue();
