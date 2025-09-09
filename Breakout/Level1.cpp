@@ -1,34 +1,42 @@
-#include "Level1.h"
+﻿#include "Level1.h"
 #include "Renderer.h"
 #include "SpriteInstance.h"
+#include "inputManager.h"
+#include "PhysicsManager.h"
 #include <d3dx9.h>
 #include <iostream>
+#include <dinput.h>
 
 using namespace std;
 
 static D3DXVECTOR3 makePos(float x, float y) { return D3DXVECTOR3(x, y, 0); }
 
 bool Level1::OnEnter(const GameServices& services) {
-
-    // Load Bricks
+    // Bricks Layout
     m_whiteTex = services.renderer.CreateSolidTexture(D3DCOLOR_ARGB(255, 255, 255, 255));
-
     // Brick ordering variable
     const float brickWidth = 64.f, brickHeight = 32.f;
-    const float columnCount = 10.f, rowCount = 2.f, gap = 2.f;
+    const float columnCount = 10.f, rowCount = 3.f, gap = 10.f;
     // ========================
     m_redBrick.textureHandle = m_whiteTex;
     m_redBrick.scale = D3DXVECTOR3(brickWidth, brickHeight, 0);
     m_redBrick.color = D3DCOLOR_ARGB(255, 255, 0, 0); // red
     m_redBrick.visible = false;
 	m_redBrick.position = makePos(100, 100);
-	
+    // Create the Brick layout
     float posX = 0, posY = 50;
-    for (int i = 0; i < columnCount; i++) {
-        posX += brickWidth + gap;
-        m_bricksList[i] = m_redBrick.CloneWithNewId();
-        m_bricksList[i].position = makePos(posX, posY);
-        m_bricksList[i].visible = true;
+    int totalBrick = 0;
+    for (int j = 0; j < rowCount; j++) {
+        posY += brickHeight + gap;
+		for (int i = 0; i < columnCount; i++) {
+			posX += brickWidth + gap;
+			m_bricksList[totalBrick] = m_redBrick.CloneWithNewId();
+			m_bricksList[totalBrick].position = makePos(posX, posY);
+            //cout << "PosX: " << posX << " PosY: " << posY << endl;
+			m_bricksList[totalBrick].visible = true;
+            totalBrick++;
+		}
+        posX = 0;
     }
 
     // Load Bg
@@ -38,13 +46,12 @@ bool Level1::OnEnter(const GameServices& services) {
     // Load Ball
     m_ball.textureHandle = services.renderer.LoadTexture("assets/red_ball_transparent.png", 1024,1024);
     m_ball.position = { 500.0f, 450.0f, 0.f };
-    m_ball.scale    = { 0.5f, 0.5f, 1.f };
+    m_ball.scale    = { 0.2f, 0.2f, 1.f };
     m_ball.animationRows = 5;
     m_ball.animationCols = 5;
     m_ball.framesPerState = 5;
     m_ball.playing = true;
     
-
     // Load paddle
     m_singlePaddle.textureHandle = services.renderer.LoadTexture("assets/singlePaddle.png");
     m_singlePaddle.animationRows = 1;
@@ -54,64 +61,91 @@ bool Level1::OnEnter(const GameServices& services) {
     m_singlePaddle.scale    = { 3.f, 1.f, 1.f };
     m_singlePaddle.color    = D3DCOLOR_XRGB(255,255,255);
 
+    // Ball half-size from logical frame size (1024x1024 sheet, 5x5, scaled 0.2)
+	const float frameW = (1024.0f / m_ball.animationCols) * m_ball.scale.x; // 1024 / 5 * 0.2 ≈ 40.96
+	const float frameH = (1024.0f / m_ball.animationRows) * m_ball.scale.y;
+	m_ballHalf = D3DXVECTOR2(frameW * 0.5f, frameH * 0.5f);
+
+	// Paddle half-size (e.g., ~192x16 → {96,8})
+	m_paddleHalf = D3DXVECTOR2(96.f, 8.f);
+
+	// Physics Body setup
+	m_ballBody.mass = 1.0f;
+	m_ballBody.force = D3DXVECTOR3(0, 0, 0);             // no gravity for breakout
+	m_ballBody.velocity = D3DXVECTOR3(220.f, -220.f, 0); // initial launch speed
+
+	m_paddleBody.mass = 0.0f;     // immovable/kinematic for collision response
+	m_paddleBody.velocity = D3DXVECTOR3(0, 0, 0);
+
     m_isInitialized = true;
     return true;
 
 }
 
-void Level1::Update(float dt, InputManager&, PhysicsManager&, SoundManager&) {
-    //angle_ += dt;                        // spin ~1 rad/s
-    //center_.rotation = angle_;
+void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physicsManager, SoundManager&) {
+    // Update Animation Sprite
     m_ball.UpdateAnimation(dt);
+
+    const float screenW = 1000.f, screenH = 600.f;
+
+    // --- 1) Paddle input (kinematic) ---
+    const float paddleSpeed = 300.f;
+    if (inputManager.IsKeyDown(DIK_LEFT))  m_singlePaddle.position.x -= paddleSpeed * dt;
+    if (inputManager.IsKeyDown(DIK_RIGHT)) m_singlePaddle.position.x += paddleSpeed * dt;
+
+    // Clamp paddle
+    if (m_singlePaddle.position.x < m_paddleHalf.x) m_singlePaddle.position.x = m_paddleHalf.x;
+    if (m_singlePaddle.position.x > screenW - m_paddleHalf.x) m_singlePaddle.position.x = screenW - m_paddleHalf.x;
+
+    // Keep paddle body "kinematic"
+    m_paddleBody.velocity = D3DXVECTOR3(0, 0, 0);
+    m_paddleBody.acceleration = D3DXVECTOR3(0, 0, 0);
+    m_paddleBody.force = D3DXVECTOR3(0, 0, 0);
+
+    // --- 2) Ball physics integration (force -> accel -> vel -> pos) ---
+    // (Apply forces here if you want, e.g., gravity: m_ballBody.ApplyForce({0, 980.f * m_ballBody.mass, 0});)
+    m_ballBody.UpdatePhysics(dt);
+    m_ball.position += m_ballBody.velocity * dt;
+
+    // --- 3) Wall bounce using AABB (center vs half-size) ---
+    const float eps = 0.5f; // small push-away
+
+    // LEFT wall
+    if (m_ball.position.x < m_ballHalf.x) {
+        m_ball.position.x = m_ballHalf.x + eps;
+        if (m_ballBody.velocity.x < 0.0f) m_ballBody.velocity.x = -m_ballBody.velocity.x;
+    }
+    // RIGHT wall
+    if (m_ball.position.x > screenW - m_ballHalf.x) {
+        m_ball.position.x = (screenW - m_ballHalf.x) - eps;
+        if (m_ballBody.velocity.x > 0.0f) m_ballBody.velocity.x = -m_ballBody.velocity.x;
+    }
+    // TOP wall
+    if (m_ball.position.y < m_ballHalf.y) {
+        m_ball.position.y = m_ballHalf.y + eps;
+        if (m_ballBody.velocity.y < 0.0f) m_ballBody.velocity.y = -m_ballBody.velocity.y;
+    }
+    // BOTTOM wall
+    if (m_ball.position.y > screenH - m_ballHalf.y) {
+        m_ball.position.y = (screenH - m_ballHalf.y) - eps;
+        if (m_ballBody.velocity.y > 0.0f) m_ballBody.velocity.y = -m_ballBody.velocity.y;
+    }
+
+    // --- 4) Ball vs Paddle AABB resolve (moving body vs static solid) ---
+    physicsManager.ResolveAABB(
+        m_ball, m_ballBody, m_ballHalf,
+        m_singlePaddle, m_paddleHalf,
+        0.9f // restitution
+    );
 }
 
 void Level1::Render(Renderer& renderer) {
-    //if (!m_isInitialized) {
-    //    // 1x1 white tex (we�ll tint with SpriteInstance.color)
-    //    m_whiteTex = renderer.CreateSolidTexture(D3DCOLOR_ARGB(255, 255, 255, 255));
-
-    //    const float W = 64, H = 64;      // draw size on screen (scaled from 1x1)
-
-    //    // corners (verifies coordinate system & transforms)
-    //    corner_[0].id() = m_whiteTex; corner_[0].position = makePos(50, 50);   corner_[0].scale = D3DXVECTOR3(W, H, 1); corner_[0].color = D3DCOLOR_ARGB(255, 255, 0, 0);   // red
-    //    corner_[1].id() = m_whiteTex; corner_[1].position = makePos(950, 50);   corner_[1].scale = D3DXVECTOR3(W, H, 1); corner_[1].color = D3DCOLOR_ARGB(255, 0, 255, 0);   // green
-    //    corner_[2].id() = m_whiteTex; corner_[2].position = makePos(50, 550);   corner_[2].scale = D3DXVECTOR3(W, H, 1); corner_[2].color = D3DCOLOR_ARGB(255, 0, 0, 255);   // blue
-    //    corner_[3].id() = m_whiteTex; corner_[3].position = makePos(950, 550);  corner_[3].scale = D3DXVECTOR3(W, H, 1); corner_[3].color = D3DCOLOR_ARGB(255, 255, 255, 0); // yellow
-
-    //    // center spinning square (verifies pivot/origin + rotation)
-    //    center_.id() = m_whiteTex;
-    //    center_.position = makePos(500, 300);
-    //    center_.scale = D3DXVECTOR3(96, 96, 1);   // big enough to see
-    //    center_.color = D3DCOLOR_ARGB(255, 255, 255, 255); // white
-
-    //    // layering + alpha: A under B (B is translucent)
-    //    overA_.id() = m_whiteTex; overA_.position = makePos(600, 300);
-    //    overA_.scale = D3DXVECTOR3(120, 120, 1);
-    //    overA_.color = D3DCOLOR_ARGB(255, 255, 0, 255);   // magenta, opaque
-
-    //    overB_.id() = m_whiteTex; overB_.position = makePos(630, 330);
-    //    overB_.scale = D3DXVECTOR3(120, 120, 1);
-    //    overB_.color = D3DCOLOR_ARGB(128, 0, 0, 0);       // 50% black
-
-    //    m_isInitialized = true;
-    //}
-
-    // Draw order is the z-order in immediate mode:
-    //for (auto& s : corner_) renderer.DrawSprite(s); // 4 corners
-    //renderer.DrawSprite(center_);                   // spinning center
-    //renderer.DrawSprite(overA_);                    // bottom magenta
-    //renderer.DrawSprite(overB_);                    // top semi-transparent black
-
     // Render order, first draw at back, last draw at front
 	renderer.DrawSprite(m_background);
 	renderer.DrawSprite(m_singlePaddle);
 	//renderer.DrawSprite(m_redBrick);
     for (auto& brick : m_bricksList) renderer.DrawSprite(brick);
     renderer.DrawSprite(m_ball);
-
-
-
-
 
 
 }

@@ -2,6 +2,7 @@
 #include "SpriteInstance.h"
 #include "IGameState.h"
 #include "GameServices.h"
+#include "PhysicsBody.h"
 
 class Level1 : public IGameState
 {
@@ -25,5 +26,15 @@ private:
     SpriteInstance m_singlePaddle;
     SpriteInstance m_background;
     SpriteInstance m_ball;
+
+    // Physics Body
+    PhysicsBody m_ballBody{};
+    PhysicsBody m_paddleBody{};
+
+    //D3DXVECTOR3  m_ballVelocity { 220.f, -220.f, 0.f }; // px/sec
+
+    // default value, set value at OnEnter()
+	D3DXVECTOR2  m_ballHalf     { 20.f, 20.f }; 
+	D3DXVECTOR2  m_paddleHalf   { 96.f, 8.f  };         
 };
 
