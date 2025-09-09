@@ -3,6 +3,7 @@
 #include "SpriteInstance.h"
 #include "inputManager.h"
 #include "PhysicsManager.h"
+#include "SoundManager.h"
 #include <d3dx9.h>
 #include <iostream>
 #include <dinput.h>
@@ -16,7 +17,7 @@ bool Level1::OnEnter(const GameServices& services) {
     m_whiteTex = services.renderer.CreateSolidTexture(D3DCOLOR_ARGB(255, 255, 255, 255));
     // Brick ordering variable
     const float brickWidth = 64.f, brickHeight = 32.f;
-    const float columnCount = 10.f, rowCount = 3.f, gap = 10.f;
+    const float columnCount = 12.f, rowCount = 3.f, gap = 10.f;
     // ========================
     m_redBrick.textureHandle = m_whiteTex;
     m_redBrick.scale = D3DXVECTOR3(brickWidth, brickHeight, 0);
@@ -72,7 +73,7 @@ bool Level1::OnEnter(const GameServices& services) {
 	// Physics Body setup
 	m_ballBody.mass = 1.0f;
 	m_ballBody.force = D3DXVECTOR3(0, 0, 0);             // no gravity for breakout
-	m_ballBody.velocity = D3DXVECTOR3(220.f, -220.f, 0); // initial launch speed
+	m_ballBody.velocity = BALL_INITIAL_VELOCITY; // initial launch speed
 
 	m_paddleBody.mass = 0.0f;     // immovable/kinematic for collision response
 	m_paddleBody.velocity = D3DXVECTOR3(0, 0, 0);
@@ -82,14 +83,22 @@ bool Level1::OnEnter(const GameServices& services) {
 
 }
 
-void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physicsManager, SoundManager&) {
+void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physicsManager, SoundManager& soundManager) {
+    // Change Game State
+    //ChangeState()
+    if (life == 0) {
+        soundManager.Play("gameover");
+    }
+    
+    
     // Update Animation Sprite
     m_ball.UpdateAnimation(dt);
+    soundManager.Update();
 
     const float screenW = 1000.f, screenH = 600.f;
 
     // --- 1) Paddle input (kinematic) ---
-    const float paddleSpeed = 300.f;
+    const float paddleSpeed = 800.f;
     if (inputManager.IsKeyDown(DIK_LEFT))  m_singlePaddle.position.x -= paddleSpeed * dt;
     if (inputManager.IsKeyDown(DIK_RIGHT)) m_singlePaddle.position.x += paddleSpeed * dt;
 
@@ -127,8 +136,15 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
     }
     // BOTTOM wall
     if (m_ball.position.y > screenH - m_ballHalf.y) {
-        m_ball.position.y = (screenH - m_ballHalf.y) - eps;
-        if (m_ballBody.velocity.y > 0.0f) m_ballBody.velocity.y = -m_ballBody.velocity.y;
+        //m_ball.position.y = (screenH - m_ballHalf.y) - eps;
+        //if (m_ballBody.velocity.y > 0.0f) m_ballBody.velocity.y = -m_ballBody.velocity.y;
+        // move the ball back to original location and minus 1 life
+         m_ball.position = { 500.0f, 450.0f, 0.f };
+         m_ballBody.velocity = BALL_INITIAL_VELOCITY;
+
+         soundManager.Play("damage");
+         life--;
+         cout << "Life Count: " << life << endl;
     }
 
     // --- 4) Ball vs Paddle AABB resolve (moving body vs static solid) ---
@@ -137,6 +153,84 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
         m_singlePaddle, m_paddleHalf,
         0.9f // restitution
     );
+
+
+    // ball & brick collision
+    //for (auto& brick : m_bricksList) {
+    //    if (!brick.visible) continue;
+
+    //    const D3DXVECTOR2 brickHalf(brick.scale.x * 0.5f, brick.scale.y * 0.5f);
+
+    //    if (physicsManager.OverlapAABB(m_ball, m_ballHalf, brick, brickHalf)) {
+    //        physicsManager.ResolveAABB(m_ball, m_ballBody, m_ballHalf, brick, brickHalf, 0.9f);
+
+    //        // Destroy brick
+    //        brick.visible = false;
+    //        break; // only handle single brick collision in 1 frame to avoid double reflections
+    //    }
+
+    //}
+    // --- 5) Ball vs Bricks using swept AABB to prevent tunneling ---
+	{
+		float remaining = dt;
+		const int maxHits = 3; // avoid infinite loops if trapped
+		int hits = 0;
+
+		while (remaining > 0.0f && hits < maxHits) {
+			// Displacement for this sub-step
+			D3DXVECTOR3 disp = m_ballBody.velocity * remaining;
+
+			float bestToi = 1.1f; // >1 means "no hit"
+			int   hitIndex = -1;
+			D3DXVECTOR3 hitNormal(0,0,0);
+
+			// Find earliest brick hit in this sub-step
+			for (int i = 0; i < 40; ++i) {
+				auto& brick = m_bricksList[i];
+				if (!brick.visible) continue;
+				const D3DXVECTOR2 brickHalf(brick.scale.x * 0.5f, brick.scale.y * 0.5f);
+
+				float toi; D3DXVECTOR3 n;
+				if (physicsManager.SweepAABB(m_ball, m_ballHalf, disp, brick, brickHalf, toi, n)) {
+					if (toi >= 0.0f && toi <= 1.0f && toi < bestToi) {
+						bestToi = toi;
+						hitIndex = i;
+						hitNormal = n;
+					}
+				}
+			}
+
+			if (hitIndex < 0) {
+				// No brick hit in this sub-step: advance fully and finish
+				m_ball.position += disp;
+				break;
+			}
+
+			// Move to contact (slightly before to avoid re-penetration)
+			const float eps = 0.001f;
+			m_ball.position += disp * (bestToi - eps);
+
+			// Reflect velocity along the hit normal
+			if (hitNormal.x != 0.0f) {
+				m_ballBody.velocity.x = -m_ballBody.velocity.x;
+			}
+			if (hitNormal.y != 0.0f) {
+				m_ballBody.velocity.y = -m_ballBody.velocity.y;
+			}
+
+			// Remove the brick
+			m_bricksList[hitIndex].visible = false;
+            soundManager.Play("hit");
+
+			// Continue with remaining time
+			const float used = (bestToi > 0.0f) ? bestToi : 0.0f;
+			remaining *= (1.0f - used);
+			++hits;
+		}
+}
+
+
+
 }
 
 void Level1::Render(Renderer& renderer) {

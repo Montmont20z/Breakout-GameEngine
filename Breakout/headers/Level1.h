@@ -14,10 +14,12 @@ public:
 private:
     bool m_isInitialized = false;
     int  m_whiteTex = 0;
-    SpriteInstance corner_[4];
-    SpriteInstance center_;
-    SpriteInstance overA_, overB_; // for layering & alpha
-    float angle_ = 0.0f;
+    //SpriteInstance corner_[4];
+    //SpriteInstance center_;
+    //SpriteInstance overA_, overB_; // for layering & alpha
+    //float angle_ = 0.0f;
+    int life = 5;
+    const D3DXVECTOR3 BALL_INITIAL_VELOCITY = D3DXVECTOR3(150.f, -150.f, 0);
 
     // Sprites in level
     SpriteInstance m_bricksList[40];

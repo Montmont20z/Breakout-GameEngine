@@ -118,3 +118,83 @@ void PhysicsManager::ResolveAABB(SpriteInstance& moving, PhysicsBody& bodyA, con
     }
 }
 
+bool PhysicsManager::OverlapAABB(const SpriteInstance& A, const D3DXVECTOR2 halfA, const SpriteInstance& B, const D3DXVECTOR2 halfB) const
+{
+    const float dx = fabsf(A.position.x - B.position.x);
+    const float dy = fabsf(A.position.y - B.position.y);
+    return (dx <= (halfA.x + halfB.x)) && (dy <= (halfA.y - halfB.y));
+}
+
+
+bool PhysicsManager::SweepAABB(const SpriteInstance& A, const D3DXVECTOR2& halfA,
+                               const D3DXVECTOR3& d, // displacement over this frame
+                               const SpriteInstance& B, const D3DXVECTOR2& halfB,
+                               float& toi, D3DXVECTOR3& n) const
+{
+    // Build edge coords from centers
+    const float leftA   = A.position.x - halfA.x;
+    const float rightA  = A.position.x + halfA.x;
+    const float topA    = A.position.y - halfA.y;
+    const float bottomA = A.position.y + halfA.y;
+
+    const float leftB   = B.position.x - halfB.x;
+    const float rightB  = B.position.x + halfB.x;
+    const float topB    = B.position.y - halfB.y;
+    const float bottomB = B.position.y + halfB.y;
+
+    // Early-out if already overlapping at t=0 (treat as no-sweep hit)
+    const bool overlapNow =
+        (rightA  > leftB)  && (leftA   < rightB) &&
+        (bottomA > topB)   && (topA    < bottomB);
+    if (overlapNow) { toi = 0.0f; n = D3DXVECTOR3(0,0,0); return true; }
+
+    // For zero movement, no swept hit
+    const float dx = d.x, dy = d.y;
+    if (dx == 0.0f && dy == 0.0f) return false;
+
+    // Compute entry/exit distances along each axis
+    float xEntryDist, xExitDist;
+    if (dx > 0.0f) {
+        xEntryDist = leftB  - rightA;
+        xExitDist  = rightB - leftA;
+    } else {
+        xEntryDist = rightB - leftA;
+        xExitDist  = leftB  - rightA;
+    }
+
+    float yEntryDist, yExitDist;
+    if (dy > 0.0f) {
+        yEntryDist = topB    - bottomA;
+        yExitDist  = bottomB - topA;
+    } else {
+        yEntryDist = bottomB - topA;
+        yExitDist  = topB    - bottomA;
+    }
+
+    // Convert to times in [0..1] (normalize by displacement)
+    const float INF = 1e30f;
+    float xEntry = (dx == 0.0f) ? -INF : (xEntryDist / dx);
+    float xExit  = (dx == 0.0f) ?  INF : (xExitDist  / dx);
+    float yEntry = (dy == 0.0f) ? -INF : (yEntryDist / dy);
+    float yExit  = (dy == 0.0f) ?  INF : (yExitDist  / dy);
+
+    // Overall entry is max of per-axis entries; overall exit is min of exits
+    float tEntry = (xEntry > yEntry) ? xEntry : yEntry;
+    float tExit  = (xExit  < yExit ) ? xExit  : yExit;
+
+    // Valid collision if intervals overlap, and entry is within the frame
+    if (tEntry > tExit)            return false;
+    if (tEntry < 0.0f || tEntry > 1.0f) return false;
+
+    // Determine hit normal from axis of entry
+    if (xEntry > yEntry) {
+        n = D3DXVECTOR3((dx > 0.0f) ? -1.0f : 1.0f, 0.0f, 0.0f); // hit on X side
+    } else {
+        n = D3DXVECTOR3(0.0f, (dy > 0.0f) ? -1.0f : 1.0f, 0.0f); // hit on Y side
+    }
+
+    toi = tEntry;
+    return true;
+}
+
+

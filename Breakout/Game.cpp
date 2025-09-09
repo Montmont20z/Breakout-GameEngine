@@ -38,6 +38,14 @@ bool Game::Initialize() {
         MessageBoxW(nullptr, L"Failed to initialize sound manager!", L"Error", MB_ICONERROR);
         return false;
     }
+    //m_soundManager.LoadSounds();
+    m_soundManager.Load("hit", "assets/glass_hit.wav");
+    m_soundManager.Load("gameover", "assets/gameover_sound.wav");
+    m_soundManager.Load("damage", "assets/damage_sound.wav");
+    m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/true, /*loop*/true);
+    m_soundManager.Load("bgm", "assets/ctr_title.mp3");
+    //m_soundManager.Play("bgm");
+
 
 
     ChangeState(std::make_unique<MenuState>());
@@ -51,7 +59,7 @@ void Game::Run()
     using clock = std::chrono::steady_clock;
     auto prev = clock::now();
 
-    m_soundManager.LoadSounds();
+    //m_soundManager.LoadSounds();
     //m_soundManager.PlaySound1();
     //m_soundManager.PlaySoundTrack();
 
