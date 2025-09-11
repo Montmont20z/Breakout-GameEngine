@@ -242,11 +242,10 @@ void Level1::Render(Renderer& renderer) {
     for (auto& brick : m_bricksList) renderer.DrawSprite(brick);
     renderer.DrawSprite(m_ball);
 
-    // Draw Hud Text
+    // Draw Hud Text (Life)
     std::wstringstream ss;
     ss << L"Lives: " << life;
-    renderer.DrawTextString(ss.str(), 16, 12, D3DCOLOR_XRGB(255, 255, 255));
-
-
+    D3DCOLOR lifeColor = (life <= 1) ? D3DCOLOR_XRGB(255, 60, 60) : D3DCOLOR_XRGB(255, 255, 255);
+    renderer.DrawTextString(ss.str(), 16, 12, lifeColor);
 }
 
