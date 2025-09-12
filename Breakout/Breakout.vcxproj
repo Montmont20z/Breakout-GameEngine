@@ -137,6 +137,7 @@ d3dx9.lib;user32.lib
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EndGameState.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameoverState.cpp" />
     <ClCompile Include="InputManager.cpp" />
@@ -155,6 +156,7 @@ d3dx9.lib;user32.lib
     <Text Include="example.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\EndGameState.h" />
     <ClInclude Include="headers\GameoverState.h" />
     <ClInclude Include="headers\GameServices.h" />
     <ClInclude Include="headers\IGameState.h" />

@@ -10,6 +10,7 @@
 #include <dinput.h>
 #include <sstream>
 #include "GameoverState.h"
+#include "EndGameState.h"
 #include "YouWinState.h"
 #include <cstdlib>
 #include <ctime>
@@ -46,7 +47,7 @@ bool Level3::OnEnter(const GameServices& services) {
 
 	// Random assign some bricks to blue
 	std::srand(static_cast<unsigned>(std::time(nullptr)));
-	const float blueChance = 0.70f; // 20% chance blue
+	const float blueChance = 0.80f; // 20% chance blue
 
 	// Create the Brick layout
 	float posX = 0, posY = 50;
@@ -107,6 +108,12 @@ bool Level3::OnEnter(const GameServices& services) {
 	m_singlePaddle.position = { 500.f, 500.f, 0.f };
 	m_singlePaddle.scale = { 3.f, 1.f, 1.f };
 	m_singlePaddle.color = D3DCOLOR_XRGB(255, 255, 255);
+	
+	// Load rick
+	m_rick.textureHandle = services.renderer.LoadTexture("assets/rick.png");
+	m_rick.visible = false;
+	m_rick.position = { 500.0f, 40.0f, 0.f };
+	m_rick.scale = { 0.7f, 0.7f, 0.f };
 
 	// Ball half-size from logical frame size (1024x1024 sheet, 5x5, scaled 0.2)
 	const float frameW = (1024.0f / m_ball.animationCols) * m_ball.scale.x; // 1024 / 5 * 0.2 ≈ 40.96
@@ -125,6 +132,7 @@ bool Level3::OnEnter(const GameServices& services) {
 	m_paddleBody.velocity = D3DXVECTOR3(0, 0, 0);
 
 	m_isInitialized = true;
+	m_playedSfx = false;
 	return true;
 
 }
@@ -142,7 +150,20 @@ void Level3::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 	}
 	// Win
 	if (m_aliveBricks <= 0) {
-		g_game->RequestState(std::make_unique<YouWinState>());
+		for (auto& blueBall : m_blueBalls) {
+			blueBall.sprite.visible = false;
+		}
+		m_ball.visible = false;
+		m_rick.visible = true;
+		m_rick.position.y += 1.5f;
+		if (!m_playedSfx) {
+			soundManager.StopAll();
+		//	soundManager.Play("troll_bgm");
+			m_playedSfx = true;
+		}
+		if (m_rick.position.y >= m_singlePaddle.position.y) {
+			g_game->RequestState(std::make_unique<EndGameState>());
+		}
 		return;
 	}
 
@@ -156,6 +177,7 @@ void Level3::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 	const float paddleSpeed = 800.f;
 	if (inputManager.IsKeyDown(DIK_LEFT))  m_singlePaddle.position.x -= paddleSpeed * dt;
 	if (inputManager.IsKeyDown(DIK_RIGHT)) m_singlePaddle.position.x += paddleSpeed * dt;
+	if (inputManager.IsKeyDown(DIK_R)) g_game->RestartCurrentLevel();
 
 	// Clamp paddle
 	if (m_singlePaddle.position.x < m_paddleHalf.x) m_singlePaddle.position.x = m_paddleHalf.x;
@@ -434,6 +456,7 @@ void Level3::Render(Renderer& renderer) {
 	for (auto& brick : m_bricksList) renderer.DrawSprite(brick);
 	for (auto& bb : m_blueBalls) renderer.DrawSprite(bb.sprite); // draw blue ball
 	renderer.DrawSprite(m_ball);
+	renderer.DrawSprite(m_rick);
 
 
 	// Draw Hud Text (Life)
@@ -464,9 +487,6 @@ void Level3::Render(Renderer& renderer) {
 			const int tx = int(bx - 20); // tweak to taste
 			const int ty = int(by - 10);
 
-			// 1) small shadow for readability
-			//renderer.DrawTextString(gs.str(), tx + 1, ty + 1, D3DCOLOR_XRGB(255, 255, 255));
-			// 2) white text on top
 			renderer.DrawTextString(gs.str(), tx, 20, D3DCOLOR_XRGB(255, 255, 255));
 		}
 	}

@@ -20,12 +20,14 @@ private:
     int life = 3;
     const D3DXVECTOR3 BALL_INITIAL_VELOCITY = D3DXVECTOR3(150.f, -150.f, 0);
     static constexpr int MAX_BRICKS = 80;
+    bool  m_playedSfx = false;
 
     // Sprites in level
     SpriteInstance m_bricksList[MAX_BRICKS];
     SpriteInstance m_redBrick;
     SpriteInstance m_greenBrick;
     SpriteInstance m_singlePaddle;
+    SpriteInstance m_rick;
     SpriteInstance m_ball;
     SpriteInstance m_background;
     int m_brickCount = 0;  // how many were actually created this level 

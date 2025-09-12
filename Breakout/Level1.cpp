@@ -146,6 +146,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
     const float paddleSpeed = 800.f;
     if (inputManager.IsKeyDown(DIK_LEFT))  m_singlePaddle.position.x -= paddleSpeed * dt;
     if (inputManager.IsKeyDown(DIK_RIGHT)) m_singlePaddle.position.x += paddleSpeed * dt;
+	if (inputManager.IsKeyDown(DIK_R)) g_game->RestartCurrentLevel();
 
     // Clamp paddle
     if (m_singlePaddle.position.x < m_paddleHalf.x) m_singlePaddle.position.x = m_paddleHalf.x;

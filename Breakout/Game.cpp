@@ -46,12 +46,12 @@ bool Game::Initialize() {
     m_soundManager.Load("gameover", "assets/gameover_sound.wav");
     m_soundManager.Load("you_win", "assets/you_win.mp3");
     m_soundManager.Load("damage", "assets/damage_sound.wav");
-    m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/true, /*loop*/true);
+    m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/false, /*loop*/true);
     m_soundManager.Load("bgm", "assets/ctr_title.mp3", true, true);
     m_soundManager.Load("ingame_bgm", "assets/ctr_ingame.mp3", true, true);
     //ChangeState(std::make_unique<MenuState>());
     //ChangeState(std::make_unique<Level2>());
-    g_game->LoadLevel(3);
+    g_game->LoadLevel(0);
 
     return true;
 }
