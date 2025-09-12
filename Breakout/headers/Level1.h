@@ -18,7 +18,7 @@ private:
     //SpriteInstance center_;
     //SpriteInstance overA_, overB_; // for layering & alpha
     //float angle_ = 0.0f;
-    int life = 5;
+    int life = 1;
     const D3DXVECTOR3 BALL_INITIAL_VELOCITY = D3DXVECTOR3(150.f, -150.f, 0);
 
     // Sprites in level

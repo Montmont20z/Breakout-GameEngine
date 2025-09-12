@@ -138,6 +138,7 @@ d3dx9.lib;user32.lib
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameoverState.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Level1.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -151,6 +152,7 @@ d3dx9.lib;user32.lib
     <Text Include="example.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\GameoverState.h" />
     <ClInclude Include="headers\GameServices.h" />
     <ClInclude Include="headers\IGameState.h" />
     <ClInclude Include="headers\Game.h" />

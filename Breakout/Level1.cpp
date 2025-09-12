@@ -4,12 +4,15 @@
 #include "inputManager.h"
 #include "PhysicsManager.h"
 #include "SoundManager.h"
+#include "Game.h"
 #include <d3dx9.h>
 #include <iostream>
 #include <dinput.h>
 #include <sstream>
+#include "GameoverState.h"
 
 using namespace std;
+extern Game* g_game;
 
 static D3DXVECTOR3 makePos(float x, float y) { return D3DXVECTOR3(x, y, 0); }
 
@@ -88,7 +91,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
     // Change Game State
     //ChangeState()
     if (life <= 0) {
-        soundManager.Play("gameover");
+        g_game->ChangeState(std::make_unique<GameoverState>());
     }
     
     
@@ -96,7 +99,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
     m_ball.UpdateAnimation(dt);
     soundManager.Update();
 
-    const float screenW = 1000.f, screenH = 600.f;
+    const float screenW = g_game->GetScreenWidth(), screenH = g_game->GetScreenHeight();
 
     // --- 1) Paddle input (kinematic) ---
     const float paddleSpeed = 800.f;
@@ -155,22 +158,6 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
         0.9f // restitution
     );
 
-
-    // ball & brick collision
-    //for (auto& brick : m_bricksList) {
-    //    if (!brick.visible) continue;
-
-    //    const D3DXVECTOR2 brickHalf(brick.scale.x * 0.5f, brick.scale.y * 0.5f);
-
-    //    if (physicsManager.OverlapAABB(m_ball, m_ballHalf, brick, brickHalf)) {
-    //        physicsManager.ResolveAABB(m_ball, m_ballBody, m_ballHalf, brick, brickHalf, 0.9f);
-
-    //        // Destroy brick
-    //        brick.visible = false;
-    //        break; // only handle single brick collision in 1 frame to avoid double reflections
-    //    }
-
-    //}
     // --- 5) Ball vs Bricks using swept AABB to prevent tunneling ---
 	{
 		float remaining = dt;
@@ -246,6 +233,6 @@ void Level1::Render(Renderer& renderer) {
     std::wstringstream ss;
     ss << L"Lives: " << life;
     D3DCOLOR lifeColor = (life <= 1) ? D3DCOLOR_XRGB(255, 60, 60) : D3DCOLOR_XRGB(255, 255, 255);
-    renderer.DrawTextString(ss.str(), 16, 12, lifeColor);
+    renderer.DrawTextString(ss.str(), 16, 12, lifeColor); // draw on top left 
 }
 

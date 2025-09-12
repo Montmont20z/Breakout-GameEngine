@@ -4,13 +4,12 @@
 #include "headers/Level1.h"
 #include "headers/MenuState.h"
 #include <iostream>
-//#include <chrono>
 #include <memory>
 #include <GameServices.h>
 
 using namespace std;
 
-Game* g_game = nullptr;
+extern Game* g_game = nullptr;
 
 Game::Game(HINSTANCE hInstance, int width, int height, int nCmdShow)
     : hInstance(hInstance)

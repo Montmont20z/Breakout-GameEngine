@@ -102,12 +102,12 @@ LRESULT CALLBACK MyWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		PostQuitMessage(0);
 		return 0;
 
-	case WM_KEYDOWN:
-		if (wParam == VK_ESCAPE) {
-			PostQuitMessage(0);
-			return 0;
-		}
-		break;
+	//case WM_KEYDOWN:
+	//	if (wParam == VK_ESCAPE) {
+	//		PostQuitMessage(0);
+	//		return 0;
+	//	}
+	//	break;
 	}
 	return DefWindowProcW(m_hWnd, uMsg, wParam, lParam);
 }
