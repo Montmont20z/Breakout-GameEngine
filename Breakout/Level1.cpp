@@ -10,6 +10,7 @@
 #include <dinput.h>
 #include <sstream>
 #include "GameoverState.h"
+#include "YouWinState.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -19,6 +20,8 @@ extern Game* g_game;
 static D3DXVECTOR3 makePos(float x, float y) { return D3DXVECTOR3(x, y, 0); }
 
 bool Level1::OnEnter(const GameServices& services) {
+	services.soundManager.Play("ingame_bgm");
+
     // Bricks Layout
     m_whiteTex = services.renderer.CreateSolidTexture(D3DCOLOR_ARGB(255, 255, 255, 255));
     // Brick ordering variable
@@ -44,28 +47,30 @@ bool Level1::OnEnter(const GameServices& services) {
 
     // Create the Brick layout
     float posX = 0, posY = 50;
-    int totalBrick = 0;
+	m_brickCount  = 0;
+	m_aliveBricks = 0;
     for (int j = 0; j < rowCount; j++) {
         posY += brickHeight + gap;
 		for (int i = 0; i < columnCount; i++) {
 			posX += brickWidth + gap;
 
             // default: red
-			m_bricksList[totalBrick] = m_redBrick.CloneWithNewId();
-			m_bricksList[totalBrick].position = makePos(posX, posY);
+			m_bricksList[m_brickCount] = m_redBrick.CloneWithNewId();
+			m_bricksList[m_brickCount].position = makePos(posX, posY);
             //cout << "PosX: " << posX << " PosY: " << posY << endl;
-			m_bricksList[totalBrick].visible = true;
+			m_bricksList[m_brickCount].visible = true;
 
             // Randomly flip to blue
             if ((std::rand() / (float)RAND_MAX) < blueChance) {
-                m_bricksList[totalBrick].color = m_blueBrick.color;
-                m_isBlue[totalBrick] = true;
+                m_bricksList[m_brickCount].color = m_blueBrick.color;
+                m_isBlue[m_brickCount] = true;
             }
             else {
-                m_isBlue[totalBrick] = false;
+                m_isBlue[m_brickCount] = false;
             }
 
-            totalBrick++;
+            m_brickCount++;
+			m_aliveBricks++;
 		}
         posX = 0;
     }
@@ -114,12 +119,24 @@ bool Level1::OnEnter(const GameServices& services) {
 
 }
 
+void Level1::OnExit(const GameServices& services) {
+	services.soundManager.StopAll();
+}
+
 void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physicsManager, SoundManager& soundManager) {
     // Change Game State
+	// Lose
     if (life <= 0) {
         g_game->ChangeState(std::make_unique<GameoverState>());
 		return;
     }
+	// Win
+	if (m_aliveBricks <= 0) {
+		g_game->ChangeState(std::make_unique<YouWinState>());
+		return;
+	}
+	cout << m_aliveBricks << endl;
+
     
     
     // Update Animation Sprite
@@ -200,7 +217,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 			D3DXVECTOR3 hitNormal(0,0,0);
 
 			// Find earliest brick hit in this sub-step
-			for (int i = 0; i < 40; ++i) {
+			for (int i = 0; i < m_brickCount; ++i) {
 				auto& brick = m_bricksList[i];
 				if (!brick.visible) continue;
 				const D3DXVECTOR2 brickHalf(brick.scale.x * 0.5f, brick.scale.y * 0.5f);
@@ -236,6 +253,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 
 				// Remove brick
 				m_bricksList[hitIndex].visible = false;
+				--m_aliveBricks;
 				soundManager.Play("hit");
 
 				// continue remaining time (existing)
@@ -296,7 +314,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 
 			float bestToi = 1.1f; int hitIdx = -1; D3DXVECTOR3 n(0,0,0);
 
-			for (int i = 0; i < 40; ++i) {
+			for (int i = 0; i < m_brickCount; ++i) {
 				auto& brick = m_bricksList[i];
 				if (!brick.visible) continue;
 				const D3DXVECTOR2 brickHalf(brick.scale.x * 0.5f, brick.scale.y * 0.5f);
@@ -326,6 +344,7 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 			}
 
 			m_bricksList[hitIdx].visible = false;
+			--m_aliveBricks;
 			soundManager.Play("hit");
 
 			const float used = (bestToi > 0.0f) ? bestToi : 0.0f;

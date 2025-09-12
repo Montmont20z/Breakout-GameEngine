@@ -15,7 +15,7 @@ class Level1 : public IGameState
 {
 public:
     bool OnEnter(const GameServices& services) override;
-	void OnExit(const GameServices& services) {}
+    void OnExit(const GameServices& services) override;
 	void Update(float dt, InputManager&, PhysicsManager&, SoundManager&) override;
 	void Render(Renderer& renderer) override;
 private:
@@ -24,17 +24,20 @@ private:
 
     int life = 3;
     const D3DXVECTOR3 BALL_INITIAL_VELOCITY = D3DXVECTOR3(150.f, -150.f, 0);
+	static constexpr int MAX_BRICKS = 40;
 
     // Sprites in level
-    SpriteInstance m_bricksList[40];
+    SpriteInstance m_bricksList[MAX_BRICKS];
     SpriteInstance m_redBrick;
     SpriteInstance m_singlePaddle;
-    SpriteInstance m_background;
     SpriteInstance m_ball;
+    SpriteInstance m_background;
+    int m_brickCount   = 0;  // how many were actually created this level 
+    int m_aliveBricks  = 0;  // how many are still visible
 
     // Blue Bricks
 	SpriteInstance m_blueBrick;
-    bool m_isBlue[40] = { false };
+    bool m_isBlue[MAX_BRICKS] = { false };
     std::vector<BlueBall> m_blueBalls;
 
     // Physics Body

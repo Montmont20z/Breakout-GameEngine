@@ -45,6 +45,9 @@
     <ClCompile Include="GameoverState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="YouWinState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="example.txt" />
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="headers\GameoverState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\YouWinState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,14 +7,7 @@
 Renderer::Renderer() = default;
 
 Renderer::~Renderer() {
-    // Clean up textures
-    //for (auto& kv : m_preloadedTextures) {
-    //    if (kv.second.texture) {
-    //        kv.second.texture->Release();
-    //        kv.second.texture = nullptr;
-    //    }
-    //}
-    //m_preloadedTextures.clear();
+   
 	if (m_hudFont) { m_hudFont->Release(); m_hudFont = nullptr; } // NEW
 
     if (m_spriteBrush) {

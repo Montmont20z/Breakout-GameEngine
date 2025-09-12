@@ -147,6 +147,7 @@ d3dx9.lib;user32.lib
     <ClCompile Include="PhysicsManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SoundManager.cpp" />
+    <ClCompile Include="YouWinState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="example.txt" />
@@ -166,6 +167,7 @@ d3dx9.lib;user32.lib
     <ClInclude Include="headers\PhysicsManager.h" />
     <ClInclude Include="headers\Level1.h" />
     <ClInclude Include="headers\MenuState.h" />
+    <ClInclude Include="headers\YouWinState.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\bg2.png" />
