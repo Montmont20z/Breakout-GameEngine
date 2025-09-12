@@ -42,10 +42,8 @@ bool Game::Initialize() {
     m_soundManager.Load("gameover", "assets/gameover_sound.wav");
     m_soundManager.Load("damage", "assets/damage_sound.wav");
     m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/true, /*loop*/true);
-    m_soundManager.Load("bgm", "assets/ctr_title.mp3");
+    m_soundManager.Load("bgm", "assets/ctr_title.mp3", true, true);
     //m_soundManager.Play("bgm");
-
-
 
     ChangeState(std::make_unique<MenuState>());
 
@@ -57,10 +55,6 @@ void Game::Run()
 
     using clock = std::chrono::steady_clock;
     auto prev = clock::now();
-
-    //m_soundManager.LoadSounds();
-    //m_soundManager.PlaySound1();
-    //m_soundManager.PlaySoundTrack();
 
 
     while (m_window.ProcessMessages()) {
@@ -85,10 +79,10 @@ void Game::CleanUp()
 
 void Game::ChangeState(std::unique_ptr<IGameState> next)
 {
-    if (m_gameState) m_gameState->OnExit();
+	GameServices svc{ m_renderer, m_inputManager, m_physicsManager, m_soundManager };
+    if (m_gameState) m_gameState->OnExit(svc);
     m_gameState = std::move(next);
     if (m_gameState) {
-        GameServices svc{ m_renderer, m_inputManager, m_physicsManager, m_soundManager };
         m_gameState->OnEnter(svc);
     }
 }

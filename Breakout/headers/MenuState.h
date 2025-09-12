@@ -6,7 +6,7 @@
 class MenuState : public IGameState {
 public:
     bool OnEnter(const GameServices& services) override;
-    void OnExit() override {}
+    void OnExit(const GameServices& services) override;
     void Update(float dt, InputManager& input, PhysicsManager&, SoundManager&) override;
     void Render(Renderer& renderer) override;
 

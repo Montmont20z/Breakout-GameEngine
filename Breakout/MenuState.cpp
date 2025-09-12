@@ -1,6 +1,7 @@
 #include "MenuState.h"
 #include "Renderer.h"
 #include "InputManager.h"
+#include "SoundManager.h"
 #include "Level1.h"
 #include "Game.h"
 #include <dinput.h>
@@ -16,14 +17,22 @@ bool MenuState::OnEnter(const GameServices& services) {
     m_startText.textureHandle = services.renderer.LoadTexture("assets/start_text.png", 140, 40);
     m_startText.position = { 500.f, 400.f, 0.f };
 
+    services.soundManager.Play("bgm");
+
+
     m_isInitialized = true;
     return true;
+}
+
+void MenuState::OnExit(const GameServices& services) {
+    services.soundManager.StopAll();
 }
 
 void MenuState::Update(float dt, InputManager& input, PhysicsManager&, SoundManager&) {
     if (input.IsKeyPressed(DIK_RETURN)) { 
         extern Game* g_game;               
         g_game->ChangeState(std::make_unique<Level1>());
+        return;
     }
 }
 

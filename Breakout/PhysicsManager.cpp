@@ -3,76 +3,53 @@
 #include <cmath>
 
 // Simple circle collision (very small, easy to understand)
-void PhysicsManager::SimpleResolveCircleCollision(SpriteInstance& A_spr, PhysicsBody& A_body,
-                                  SpriteInstance& B_spr, PhysicsBody& B_body,
-                                  float restitution) // 0..1, 1 = perfectly elastic
-{
-    // centers (assumes sprite.position is the center)
-    float ax = A_spr.position.x;
-    float ay = A_spr.position.y;
-    float bx = B_spr.position.x;
-    float by = B_spr.position.y;
+bool PhysicsManager::SimpleResolveCircleCollision(
+    D3DXVECTOR3& pA, D3DXVECTOR3& vA, float rA, float mA,
+    D3DXVECTOR3& pB, D3DXVECTOR3& vB, float rB, float mB,
+    float e
+){
+    D3DXVECTOR3 delta = pB - pA;
+    float dist2 = delta.x*delta.x + delta.y*delta.y;
+    float r = rA + rB;
 
-    float dx = bx - ax;
-    float dy = by - ay;
-    float dist2 = dx*dx + dy*dy;
-    float rSum = A_body.radius + B_body.radius;
-    if (dist2 >= rSum * rSum) return; // no collision
+    if (dist2 >= r*r) return false;
 
-    float dist = sqrtf(dist2);
-    // avoid division by zero
-    D3DXVECTOR3 normal;
-    if (dist > 1e-6f) {
-        normal = D3DXVECTOR3(dx / dist, dy / dist, 0.0f); // this get unit vector of normal
+    float dist = (std::max)(0.0001f, sqrtf(dist2));
+    D3DXVECTOR3 n = delta / dist;           // collision normal from A->B
+    float penetration = r - dist;
+
+    // Positional correction (prevent sinking)
+    const float k_slop = 0.001f;
+    const float percent = 0.8f; // 80% correction
+    D3DXVECTOR3 correction = n * (percent * (penetration - k_slop));
+    float invA = (mA > 0.f) ? 1.0f / mA : 0.0f;
+    float invB = (mB > 0.f) ? 1.0f / mB : 0.0f;
+    float invSum = invA + invB;
+    if (invSum > 0.f) {
+        pA -= correction * (invA / invSum);
+        pB += correction * (invB / invSum);
     } else {
-        // perfectly overlapping; choose arbitrary normal
-        normal = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
-        dist = 0.0f;
+        // both infinite mass? push apart evenly
+        pA -= correction * 0.5f;
+        pB += correction * 0.5f;
     }
 
-    // penetration and simple positional correction (split by mass)
-    float penetration = rSum - dist;
-    float invMassA = (A_body.mass > 0.0f) ? 1.0f / A_body.mass : 0.0f;
-    float invMassB = (B_body.mass > 0.0f) ? 1.0f / B_body.mass : 0.0f;
-    float invSum = invMassA + invMassB;
-    if (invSum > 0.0f) {
-        // move them out so they no longer overlap
-        D3DXVECTOR3 correction = D3DXVECTOR3(normal.x * (penetration / invSum),
-                                             normal.y * (penetration / invSum),
-                                             0.0f);
-        // heavier object moves less
-        A_spr.position.x -= correction.x * invMassA;
-        A_spr.position.y -= correction.y * invMassA;
-        B_spr.position.x += correction.x * invMassB;
-        B_spr.position.y += correction.y * invMassB;
-    }
+    // Relative velocity along normal
+    D3DXVECTOR3 rv = vB - vA;
+    float velAlongNormal = rv.x*n.x + rv.y*n.y;
+    if (velAlongNormal > 0.f) return true; // moving apart after correction
 
-    // relative velocity
-    D3DXVECTOR3 relVel = D3DXVECTOR3(B_body.velocity.x - A_body.velocity.x,
-                                     B_body.velocity.y - A_body.velocity.y, 0.0f);
-    // dot product to project vector onto the normal
-    float velAlongNormal = relVel.x * normal.x + relVel.y * normal.y; // dot product between vector and normal,  v . n
+    // Compute impulse scalar
+    float j = -(1.f + e) * velAlongNormal;
+    float denom = invA + invB;
+    if (denom <= 0.f) return true;
+    j /= denom;
 
-    // if moving apart already, no impulse needed
-    if (velAlongNormal > 0.0f) return;
+    D3DXVECTOR3 impulse = n * j;
+    vA -= impulse * invA;
+    vB += impulse * invB;
 
-    // compute impulse scalar (very simple)
-    float e = restitution;
-    float j = 0.0f;
-    if (invSum > 0.0f) {
-        j = -(1.0f + e) * velAlongNormal / invSum;
-    }
-
-    // apply impulse
-    D3DXVECTOR3 impulse = D3DXVECTOR3(normal.x * j, normal.y * j, 0.0f);
-    if (A_body.mass > 0.0f) {
-        A_body.velocity.x -= impulse.x * invMassA;
-        A_body.velocity.y -= impulse.y * invMassA;
-    }
-    if (B_body.mass > 0.0f) {
-        B_body.velocity.x += impulse.x * invMassB;
-        B_body.velocity.y += impulse.y * invMassB;
-    }
+    return true;
 }
 
 void PhysicsManager::ResolveAABB(SpriteInstance& moving, PhysicsBody& bodyA, const D3DXVECTOR2& halfA,

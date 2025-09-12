@@ -6,7 +6,7 @@ class GameoverState : public IGameState
 {
 public:
     bool OnEnter(const GameServices& services) override;
-    void OnExit() override {}
+	void OnExit(const GameServices& services) {}
     void Update(float dt, InputManager& input, PhysicsManager&, SoundManager&) override;
     void Render(Renderer& renderer) override;
 
