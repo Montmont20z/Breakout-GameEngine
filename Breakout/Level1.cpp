@@ -127,17 +127,14 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
     // Change Game State
 	// Lose
     if (life <= 0) {
-        g_game->ChangeState(std::make_unique<GameoverState>());
+		g_game->RequestState(std::make_unique<GameoverState>());
 		return;
     }
 	// Win
 	if (m_aliveBricks <= 0) {
-		g_game->ChangeState(std::make_unique<YouWinState>());
+		g_game->RequestState(std::make_unique<YouWinState>());
 		return;
 	}
-	cout << m_aliveBricks << endl;
-
-    
     
     // Update Animation Sprite
     m_ball.UpdateAnimation(dt);
@@ -192,7 +189,6 @@ void Level1::Update(float dt, InputManager& inputManager, PhysicsManager& physic
 
          soundManager.Play("damage");
          life--;
-         cout << "Life Count: " << life << endl;
     }
 
     // --- 4) Ball vs Paddle AABB resolve (moving body vs static solid) ---

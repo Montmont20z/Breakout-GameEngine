@@ -141,6 +141,8 @@ d3dx9.lib;user32.lib
     <ClCompile Include="GameoverState.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Level1.cpp" />
+    <ClCompile Include="Level2.cpp" />
+    <ClCompile Include="Level3.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MenuState.cpp" />
     <ClCompile Include="MyWindow.cpp" />
@@ -168,6 +170,8 @@ d3dx9.lib;user32.lib
     <ClInclude Include="headers\Level1.h" />
     <ClInclude Include="headers\MenuState.h" />
     <ClInclude Include="headers\YouWinState.h" />
+    <ClInclude Include="headers\Level2.h" />
+    <ClInclude Include="headers\Level3.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\bg2.png" />

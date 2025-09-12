@@ -220,6 +220,20 @@ bool Renderer::CreateHudFont(int height, const wchar_t* face) {
 
 void Renderer::DrawTextString(const std::wstring& text, int x, int y, D3DCOLOR color) {
     if (!m_hudFont) return;
+    DWORD oldZEnable = 0, oldZWrite = 0;
+	m_d3dDevice->GetRenderState(D3DRS_ZENABLE,       &oldZEnable);
+	m_d3dDevice->GetRenderState(D3DRS_ZWRITEENABLE,  &oldZWrite);
+
+	m_d3dDevice->SetRenderState(D3DRS_ZENABLE,      FALSE);
+	m_d3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+	//// draw your text in screen-space
+	//renderer.DrawTextString(gs.str(), tx + 1, ty + 1, D3DCOLOR_XRGB(0,0,0));     // shadow
+	//renderer.DrawTextString(gs.str(), tx,     ty,     D3DCOLOR_XRGB(255,255,255)); // white
+
+	//// restore
+	//m_d3dDevice->SetRenderState(D3DRS_ZENABLE,      oldZEnable);
+	//m_d3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, oldZWrite);
     RECT rc{ x, y, x + 1000, y + 200 }; // big enough box; clip if needed
     m_hudFont->DrawTextW(nullptr, text.c_str(), -1, &rc, DT_LEFT | DT_TOP, color);
 }

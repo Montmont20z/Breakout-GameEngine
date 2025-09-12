@@ -4,6 +4,7 @@
 #include "SoundManager.h"
 #include "Game.h"
 #include "Level1.h"
+#include "Level2.h"
 #include "MenuState.h"
 #include <dinput.h>
 #include <algorithm>
@@ -35,23 +36,27 @@ void YouWinState::Update(float dt, InputManager& input, PhysicsManager&, SoundMa
     soundManager.Update();
 
     // Quick shortcuts
-    if (input.IsKeyPressed(DIK_R)) { // Restart
-        extern Game* g_game;
-        g_game->ChangeState(std::make_unique<Level1>());
-        return;
-    }
-    if (input.IsKeyPressed(DIK_ESCAPE)) { // Quit to Menu
-        extern Game* g_game;
-        g_game->ChangeState(std::make_unique<MenuState>());
-        return;
-    }
+	extern Game* g_game;
+    if (input.IsKeyPressed(DIK_N)) {
+		g_game->LoadNextLevel();  // <<< reusable
+		return;
+	}
+	if (input.IsKeyPressed(DIK_R)) {
+		g_game->RestartCurrentLevel(); // <<< reusable
+		return;
+	}
+	if (input.IsKeyPressed(DIK_ESCAPE)) {
+		g_game->RequestState(std::make_unique<MenuState>());
+		return;
+	}
+
 }
 
 void YouWinState::Render(Renderer& renderer) {
      if (!m_isInitialized) return;
 
     renderer.DrawSprite(m_titleText);
-    renderer.DrawTextString(L"Press R to Restart • Esc to Menu", 350, 450, D3DCOLOR_XRGB(255,255,255));
+    renderer.DrawTextString(L"Press N for Next Level • R to Restart • Esc to Menu", 350, 450, D3DCOLOR_XRGB(255,255,255));
 
 }
 
