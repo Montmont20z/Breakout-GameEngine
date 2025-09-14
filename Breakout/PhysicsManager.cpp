@@ -99,7 +99,7 @@ bool PhysicsManager::OverlapAABB(const SpriteInstance& A, const D3DXVECTOR2 half
 {
     const float dx = fabsf(A.position.x - B.position.x);
     const float dy = fabsf(A.position.y - B.position.y);
-    return (dx <= (halfA.x + halfB.x)) && (dy <= (halfA.y - halfB.y));
+    return (dx <= (halfA.x + halfB.x)) && (dy <= (halfA.y + halfB.y));
 }
 
 
@@ -123,7 +123,25 @@ bool PhysicsManager::SweepAABB(const SpriteInstance& A, const D3DXVECTOR2& halfA
     const bool overlapNow =
         (rightA  > leftB)  && (leftA   < rightB) &&
         (bottomA > topB)   && (topA    < bottomB);
-    if (overlapNow) { toi = 0.0f; n = D3DXVECTOR3(0,0,0); return true; }
+    if (overlapNow) {
+         // Pick normal from least penetration axis
+        const float dxL = rightA - leftB;   // A penetrates B from left
+        const float dxR = rightB - leftA;   // A penetrates B from right
+        const float dyT = bottomA - topB;   // A penetrates B from top
+        const float dyB = bottomB - topA;   // A penetrates B from bottom
+
+        // Smallest positive overlap wins:
+        float minPen = 1e30f;
+        D3DXVECTOR3 bestN(0,0,0);
+        if (dxL > 0 && dxL < minPen) { minPen = dxL; bestN = D3DXVECTOR3(-1, 0, 0); }
+        if (dxR > 0 && dxR < minPen) { minPen = dxR; bestN = D3DXVECTOR3( 1, 0, 0); }
+        if (dyT > 0 && dyT < minPen) { minPen = dyT; bestN = D3DXVECTOR3( 0,-1, 0); }
+        if (dyB > 0 && dyB < minPen) { minPen = dyB; bestN = D3DXVECTOR3( 0, 1, 0); }
+
+        n = bestN;
+        toi = 0.0f;
+        return true;
+    }
 
     // For zero movement, no swept hit
     const float dx = d.x, dy = d.y;

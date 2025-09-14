@@ -36,7 +36,7 @@ void MenuState::OnExit(const GameServices& services) {
 void MenuState::Update(float dt, InputManager& input, PhysicsManager&, SoundManager&) {
     if (input.IsKeyPressed(DIK_RETURN)) { 
         extern Game* g_game;               
-        g_game->ChangeState(std::make_unique<Level1>());
+        g_game->RequestState(std::make_unique<Level1>());
         return;
     }
     if (input.IsMousePressed(0)) {

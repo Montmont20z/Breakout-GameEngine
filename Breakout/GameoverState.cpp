@@ -36,13 +36,12 @@ void GameoverState::Update(float dt, InputManager& input, PhysicsManager&, Sound
     soundManager.Update();
 
     // Quick shortcuts
+	extern Game* g_game;
     if (input.IsKeyPressed(DIK_R)) { // Restart
-        extern Game* g_game;
-        g_game->ChangeState(std::make_unique<Level1>());
+        g_game->RestartCurrentLevel();
         return;
     }
     if (input.IsKeyPressed(DIK_ESCAPE)) { // Quit to Menu
-        extern Game* g_game;
         g_game->ChangeState(std::make_unique<MenuState>());
         return;
     }
