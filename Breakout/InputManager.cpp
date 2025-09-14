@@ -1,4 +1,4 @@
-﻿#include "headers/InputManager.h"
+﻿#include "InputManager.h"
 #include <iostream>
 
 using namespace std;
@@ -69,40 +69,49 @@ bool InputManager::Initialize(HWND hWnd) {
 }
 
 void InputManager::Update() {
-    // copy current keys to prev keys
+    // -------- keyboard: copy prev -> read current --------
     memcpy(m_keysPrev, m_keysCurrent, sizeof(m_keysCurrent));
-    ZeroMemory(m_keysCurrent, sizeof(m_keysCurrent)); // clean up current buffer
-   
-    if (!m_dInputKeyboardDevice) return;
+    ZeroMemory(m_keysCurrent, sizeof(m_keysCurrent));
 
-    HRESULT hr = m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent); 
-    if (FAILED(hr)) {
-        // try to recover/reaquire device
-        hr = m_dInputKeyboardDevice->Acquire();
-        if (SUCCEEDED(hr)) {
-            hr = m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent);
-        }
-        // if still failing, leave m_keysCurrent zeroed (no keys pressed)
-        cout << "Failed to get keyboard device state" << endl;
-
-        m_mousePrev = m_mouseCurrent;
-        ZeroMemory(&m_mouseCurrent, sizeof(m_mouseCurrent));
-        if (m_dInputMouseDevice) {
-            HRESULT hr = m_dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &m_mouseCurrent);
-            if (FAILED(hr)) {
-                m_dInputMouseDevice->Acquire();
-            }
-            else {
-                m_mouseX += m_mouseCurrent.lX;
-                m_mouseY += m_mouseCurrent.lY;
-                if (m_mouseX < 0) m_mouseX = 0;
-                if (m_mouseY < 0) m_mouseY = 0;
-                if (m_mouseX > 1000) m_mouseX = 1000; // clamp to screen
-                if (m_mouseY > 600)  m_mouseY = 600;
+    if (m_dInputKeyboardDevice) {
+        HRESULT hr = m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent);
+        if (FAILED(hr)) {
+            // try to recover/reacquire device
+            if (SUCCEEDED(m_dInputKeyboardDevice->Acquire())) {
+                m_dInputKeyboardDevice->GetDeviceState(sizeof(m_keysCurrent), (LPVOID)m_keysCurrent);
             }
         }
     }
+
+    // -------- mouse: copy prev -> read current (ALWAYS) --------
+    m_mousePrev = m_mouseCurrent;
+    ZeroMemory(&m_mouseCurrent, sizeof(m_mouseCurrent));
+
+    if (m_dInputMouseDevice) {
+        HRESULT hr = m_dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &m_mouseCurrent);
+        if (FAILED(hr)) {
+            // reacquire, then try once more
+			if (SUCCEEDED(m_dInputMouseDevice->Acquire())) {
+				hr = m_dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &m_mouseCurrent);
+			}
+			if (FAILED(hr)) {
+				// device still not giving data this frame -> no movement, keep last cursor
+				ZeroMemory(&m_mouseCurrent, sizeof(m_mouseCurrent));
+			}
+        } 
+        // accumulate relative deltas into logical-coord cursor
+		// (don’t zero these anywhere else; they persist across frames)
+		m_cursorX += m_mouseCurrent.lX;
+		m_cursorY += m_mouseCurrent.lY;
+
+		// clamp to logical backbuffer size
+		if (m_cursorX < 0) m_cursorX = 0;
+		if (m_cursorY < 0) m_cursorY = 0;
+		if (m_cursorX >= m_logicalW) m_cursorX = m_logicalW - 1;
+		if (m_cursorY >= m_logicalH) m_cursorY = m_logicalH - 1;
+    }
 }
+
 
 bool InputManager::IsKeyDown(unsigned char diKey) const {
     return (m_keysCurrent[diKey] & 0x80) != 0;

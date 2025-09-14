@@ -1,5 +1,5 @@
 #include "headers/Game.h"
-#include "headers/InputManager.h"
+#include "InputManager.h"
 #include "headers/MyWindow.h"
 #include "headers/Level1.h"
 #include "headers/MenuState.h"
@@ -50,6 +50,9 @@ bool Game::Initialize() {
     m_soundManager.Load("bgm", "assets/ctr_title.mp3", true, true);
     m_soundManager.Load("ingame_bgm", "assets/ctr_ingame.mp3", true, true);
     //ChangeState(std::make_unique<EndGameState>());
+  
+    // set mouse logical size
+    m_inputManager.SetLogicalSize(g_game->GetScreenWidth(), g_game->GetScreenHeight());
     g_game->LoadLevel(0);
 
     return true;

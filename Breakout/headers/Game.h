@@ -51,6 +51,11 @@ public:
 
     // Call this once per frame at a safe point (before Update/Render):
     void PumpPendingState();
+
+	// Mouse
+	SpriteInstance cursor;
+	D3DXVECTOR2    cursorHalf{8.f, 8.f}; // size for hit-test if you want it clickable
+
 };
 
 extern Game* g_game;

@@ -25,4 +25,7 @@ private:
     PhysicsBody m_ballBody{};
 	D3DXVECTOR2  m_ballHalf     { 20.f, 20.f }; 
 
+    SpriteInstance m_quitButton;
+	D3DXVECTOR2    m_quitHalf{ 0, 0 };
+
 };
