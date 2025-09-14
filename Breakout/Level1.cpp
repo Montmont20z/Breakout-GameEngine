@@ -108,7 +108,7 @@ bool Level1::OnEnter(const GameServices& services) {
 
 	// Physics Body setup
 	m_ballBody.mass = 1.0f;
-	m_ballBody.force = D3DXVECTOR3(0, 0, 0);             // no gravity for breakout
+	m_ballBody.force = D3DXVECTOR3(0, 0, 0);         
 	m_ballBody.velocity = BALL_INITIAL_VELOCITY; // initial launch speed
 
 	m_paddleBody.mass = 0.0f;     // immovable/kinematic for collision response

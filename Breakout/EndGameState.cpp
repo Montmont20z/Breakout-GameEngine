@@ -15,6 +15,8 @@ extern Game* g_game;
 static float frand(float a, float b) { return a + (b - a) * (rand() / (float)RAND_MAX); }
 
 bool EndGameState::OnEnter(const GameServices& services) {
+    srand((unsigned)time(nullptr));
+
     // Stop everything from the previous state, then troll BGM
     services.soundManager.StopAll();
     services.soundManager.Play("troll_bgm");
@@ -29,6 +31,17 @@ bool EndGameState::OnEnter(const GameServices& services) {
     m_rick.position = { g_game->GetScreenWidth() * 0.5f, -100.0f, 0.f };
     m_rick.scale = { 0.4f, 0.4f, 0.0f };
     m_rick.visible = true;
+
+    // Confetti texture: tiny white pixel we can tint/scale
+    m_confettiTex = services.renderer.CreateSolidTexture(D3DCOLOR_XRGB(255,255,255));
+
+    // Big initial burst across the top third of screen
+    SpawnConfettiBurst(220, 0.f, (float)g_game->GetScreenWidth(), 0.f, (float)g_game->GetScreenHeight()*0.4f, 120.f, 260.f);
+
+    // Rick FX timers
+    m_flipTimer = 0.0f;
+    m_nextFlipTime = frand(1.0f, 2.2f); // flip every ~1–2.2s at random
+    m_rickDir = 1;
 
     m_time = 0.0f;
     m_shakeTime = 0.0f;
@@ -53,12 +66,42 @@ void EndGameState::Update(float dt, InputManager& input, PhysicsManager&, SoundM
     m_titleText.position.x = g_game->GetScreenWidth() * 0.5f + wobbleX;
     m_titleText.position.y = g_game->GetScreenHeight() * 0.33f + wobbleY;
 
-    // Rick slides in & scales up a bit
-    m_rick.position.y += 60.0f * dt;
-    if (m_rick.position.y > 140.0f) m_rick.position.y = 140.0f;
-    float targetScale = 0.55f;
-    m_rick.scale.x += (targetScale - m_rick.scale.x) * (1.5f * dt);
-    m_rick.scale.y = m_rick.scale.x;
+    // Update bottom text
+    m_bottomTextPos.x += wobbleX*0.5;
+
+    // Rick slides down, then “breathes” + flips occasionally
+    // --- Rick slide & base scaling ---
+	m_rick.position.y += 60.0f * dt;
+	if (m_rick.position.y > 140.0f) m_rick.position.y = 140.0f;
+
+	// Base "pulse" scale (up & down a little)
+	float pulse = 0.05f * sinf(m_time * 2.0f);
+	float baseScale = 0.75f + pulse;
+
+	// --- Flip logic ---
+	if (m_flipCooldown > 0.f) {
+		m_flipCooldown -= dt;
+	}
+	else {
+		// Trigger a flip every ~3–5 seconds
+		if (rand() % 200 == 0) { // ~1/200 chance each frame
+			m_isFlipped = !m_isFlipped;
+			m_flipCooldown = 1.0f;   // lock out flips for 1 sec
+			m_scaleCooldown = 1.0f;  // wait 1 sec before scaling down
+		}
+	}
+
+	// --- Scale down delay after flip ---
+	if (m_scaleCooldown > 0.f) {
+		m_scaleCooldown -= dt;
+		m_rick.scale.x = baseScale * (m_isFlipped ? -1.0f : 1.0f); // flip only
+		m_rick.scale.y = baseScale;
+	} else {
+		// After waiting, allow scale to shrink
+		float shrink = 0.9f + 0.1f * cosf(m_time * 1.3f);
+		m_rick.scale.x = baseScale * shrink * (m_isFlipped ? -1.0f : 1.0f);
+		m_rick.scale.y = baseScale * shrink;
+	}
 
     // Keyboard trolling
     if (input.IsKeyPressed(DIK_R)) {
@@ -85,6 +128,47 @@ void EndGameState::Update(float dt, InputManager& input, PhysicsManager&, SoundM
             return;
         }
     }
+
+    // --- Confetti simulation ---
+    // Simple gravity + air-drift + spin; recycle when life <= 0 or off bottom
+    const float gravity = 380.f;
+    for (auto& c : m_confetti) {
+        c.v.y += gravity * dt;
+        c.s.position += c.v * dt;
+        c.rot += c.rotSpeed * dt;
+        c.life -= dt;
+
+        // tiny color shimmer
+        if (((int)(m_time * 60) & 7) == 0) {
+            // random slight bright flicker
+            int r = (rand() % 40);
+            c.s.color ^= D3DCOLOR_XRGB(r, 0, 0); // quick playful twinkle
+        }
+
+        // fade out near end
+        if (c.life < 0.8f) {
+            float a = (std::max)(0.f, c.life / 0.8f);
+            // keep RGB, scale alpha
+            DWORD rgb = (c.s.color & 0x00FFFFFF);
+            DWORD a8  = (DWORD)(a * 255.f) << 24;
+            c.s.color = a8 | rgb;
+        }
+    }
+
+    // Remove dead / off-screen pieces
+    m_confetti.erase(
+        std::remove_if(m_confetti.begin(), m_confetti.end(), [&](const Confetti& c){
+            return (c.life <= 0.f) || (c.s.position.y > g_game->GetScreenHeight() + 40.f);
+        }),
+        m_confetti.end()
+    );
+
+    // Gentle periodic re-bursts to keep party going
+    if (fmodf(m_time, 1.1f) < dt) { ReburstSmall(); }
+}
+
+void EndGameState::OnExit(const GameServices& services) {
+	services.soundManager.StopAll();
 }
 
 void EndGameState::Render(Renderer& renderer) {
@@ -99,10 +183,20 @@ void EndGameState::Render(Renderer& renderer) {
     SpriteInstance shakenTitle = m_titleText;
     shakenTitle.position.x += shakeX;
     shakenTitle.position.y += shakeY;
+    shakenTitle.position.z = 1.f;
 
     // Draw title and Rick
     renderer.DrawSprite(shakenTitle);
     renderer.DrawSprite(m_rick);
+
+     // Confetti (tiny colored rectangles)
+    for (auto& c : m_confetti) {
+        // Encode rotation into scale skew if your Renderer doesn’t support rotation.
+        // If DrawSprite respects scale only, we fake a skinny slanted piece by skewing X vs Y.
+        // Otherwise, if your Renderer has a rotated draw, use that and pass c.rot.
+        //c.rot(10);
+        renderer.DrawSprite(c.s);
+    }
 
     // Main instructions (randomly “misleading” line swaps)
     const bool swap = (sin(m_time * 3.0f) > 0.6f); // flicker between lines
@@ -115,6 +209,7 @@ void EndGameState::Render(Renderer& renderer) {
             260, 460, FlickerWhite());
     }
 
+    renderer.DrawTextString(L"Thanks For Playing!!!!! Never gonna let you downn!", m_bottomTextPos.x, m_bottomTextPos.y, FlickerWhite());
     // Denial counters to tease the user
     if (m_denialsR > 0 && m_denialsR <= kMaxDenials) {
         std::wstring msg = (m_denialsR < kMaxDenials)
@@ -146,3 +241,38 @@ D3DCOLOR EndGameState::FlickerWhite() const {
     v = (std::max)(0, (std::min)(255, v));
     return D3DCOLOR_XRGB(v, v, v);
 }
+
+void EndGameState::SpawnConfettiBurst(int count, float xMin, float xMax, float yMin, float yMax, float speedMin, float speedMax) {
+    m_confetti.reserve(m_confetti.size() + count);
+    for (int i = 0; i < count; ++i) {
+        Confetti c{};
+        c.s.textureHandle = m_confettiTex;
+        c.s.position = { frand(xMin, xMax), frand(yMin, yMax), 0.f };
+        // random tiny rectangle size
+        float w = frand(4.f, 8.f);
+        float h = frand(6.f, 14.f);
+        c.s.scale = { w, h, 0.f };
+        // random bright color
+        int r = (int)frand(120, 255);
+        int g = (int)frand(120, 255);
+        int b = (int)frand(120, 255);
+        c.s.color = D3DCOLOR_XRGB(r, g, b);
+        c.s.visible = true;
+
+        float sp = frand(speedMin, speedMax);
+        float ang = frand(-3.14f, 3.14f);
+        c.v = { sp * cosf(ang)*0.35f, -fabsf(sp), 0.f }; // initial toss upward-ish
+        c.life = frand(1.6f, 2.6f);
+        c.rot = frand(0.f, 6.28f);
+        c.rotSpeed = frand(-8.f, 8.f);
+
+        m_confetti.push_back(c);
+    }
+}
+
+void EndGameState::ReburstSmall() {
+    // small periodic sprinkle near top center
+    float cx = g_game->GetScreenWidth() * 0.5f;
+    SpawnConfettiBurst(30, cx - 120.f, cx + 120.f, 0.f, 80.f, 140.f, 260.f);
+}
+

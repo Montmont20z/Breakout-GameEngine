@@ -4,6 +4,7 @@
 #include "headers/Level1.h"
 #include "headers/MenuState.h"
 #include "headers/YouWinState.h"
+#include "headers/EndGameState.h"
 #include <iostream>
 #include <memory>
 #include <GameServices.h>
@@ -40,17 +41,15 @@ bool Game::Initialize() {
         MessageBoxW(nullptr, L"Failed to initialize sound manager!", L"Error", MB_ICONERROR);
         return false;
     }
-    //m_soundManager.LoadSounds();
     m_soundManager.Load("hit", "assets/glass_hit.wav");
     m_soundManager.Load("hard_hit", "assets/hard_hit.wav");
     m_soundManager.Load("gameover", "assets/gameover_sound.wav");
     m_soundManager.Load("you_win", "assets/you_win.mp3");
     m_soundManager.Load("damage", "assets/damage_sound.wav");
-    m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/false, /*loop*/true);
+    m_soundManager.Load("troll_bgm", "assets/never_gonna_give_you_up.mp3", /*stream*/true, /*loop*/true);
     m_soundManager.Load("bgm", "assets/ctr_title.mp3", true, true);
     m_soundManager.Load("ingame_bgm", "assets/ctr_ingame.mp3", true, true);
-    //ChangeState(std::make_unique<MenuState>());
-    //ChangeState(std::make_unique<Level2>());
+    //ChangeState(std::make_unique<EndGameState>());
     g_game->LoadLevel(0);
 
     return true;
