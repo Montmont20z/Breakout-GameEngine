@@ -23,6 +23,9 @@ Prerequisites: see the [Prerequisites](#prerequisites) section below.
 
 See the project root and folders: [Breakout/](Breakout/) • [headers/](Breakout/headers/) • [assets/](Breakout/assets/)
 
+## Download
+https://github.com/Montmont20z/Breakout/releases/tag/Release
+
 ## Prerequisites
 
 - Windows 10/11 (the project is Win32-focused).
