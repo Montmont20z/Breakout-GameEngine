@@ -5,6 +5,10 @@ A small Win32 / DirectX9 game engine project that implements the classic BreakOu
 
 Prerequisites: see the [Prerequisites](#prerequisites) section below.
 
+<img width="2556" height="1389" alt="image" src="https://github.com/user-attachments/assets/ac50dae5-c151-45d9-ab38-74e962b66be6" />
+<img width="2559" height="1389" alt="image" src="https://github.com/user-attachments/assets/02fbadc5-c554-469a-84c0-79d920915188" />
+
+
 ## Purpose
 
 - Showcase: a compact game engine suitable for a GitHub portfolio.
@@ -56,11 +60,7 @@ Notes:
 - Minimal game state management (menu, level, gameover, win states).
 - Simple physics handling and collision response.
 - Sound management for effects and basic audio playback.
-
-## For your portfolio
-
-- This project is ideal for showcasing low-level Windows game development skills and knowledge of legacy graphics APIs.
-- Consider adding a short GIF or screenshot to the README to increase visual impact.
+- And an easter egg at the final level:D
 
 ## Troubleshooting
 
